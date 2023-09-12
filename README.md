@@ -39,15 +39,21 @@ Go to the ROOT folder of your PX4-Autopilot repository. For me this folder is
 I run the commands below at from this folder in a terminal:
 
 bash$ export PX4_SITL_WORLD=${GAZEBO_WIND3D_WORLD_FILE}
+
 bash$ export GAZEBO_PLUGIN_PATH=${GAZEBO_WIND3D_PLUGIN_DIR}
+
 bash$ export LD_LIBRARY_PATH=${GAZEBO_WIND3D_PLUGIN_DIR}
+
 bash$ make px4_sitl_default gazebo-classic_iris
 
 The actual commands on my computer appear as shown below:
 
 bash$ export PX4_SITL_WORLD=/home2/arwillis/asr_project/third_party/px4_gazebo_wind3d/worlds/windy_test.world
+
 bash$ export GAZEBO_PLUGIN_PATH=/home2/arwillis/asr_project/third_party/px4_gazebo_wind3d/cmake-build-debug
+
 bash$ export LD_LIBRARY_PATH=/home2/arwillis/asr_project/third_party/px4_gazebo_wind3d/cmake-build-debug
+
 bash$ make px4_sitl_default gazebo-classic_iris
 
 You can change the "iris" postfix of the last command to use other airship/quadrotor models with this gazebo plugin.
