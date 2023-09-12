@@ -2,7 +2,7 @@
 
 Requirements
 
-You must change the CMakefile to point at the root of the PX4-Autopilot github repository on your computer:
+You must change the CMakeLists.txt file in the root directory of the repository point at the root of the PX4-Autopilot github repository on your computer:
 
 Example:
 
@@ -18,7 +18,7 @@ When compiled a file will be generated named libgazebo_wind3d_plugin.so
 Let GAZEBO_WIND3D_PLUGIN_DIR denote the folder holding the compiled plugin file (libgazebo_wind3d_plugin.so) on your computer.
 
 You will need a Gazebo world file to load the plugin. One is provided in the project "worlds" folder. 
-Let GAZEBO_WIND3D_WORLD_FILE denote the gazebo world file on your ocmputer.
+Let GAZEBO_WIND3D_WORLD_FILE denote the gazebo world file on your computer.
 
 For me:
 
