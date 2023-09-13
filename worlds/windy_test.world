@@ -58,7 +58,7 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
       <windVelocityVariance>0</windVelocityVariance>
       <windPubTopic>world_wind</windPubTopic>
       <useCustomStaticWindField>true</useCustomStaticWindField>
-      <customWindFieldPath>/home2/arwillis/asr_project/third_party/px4_gazebo_wind3d/datasets/openfoam_dataset_0.csv</customWindFieldPath>
+      <customWindFieldPath>/home.local/local-arwillis/asr_project/third_party/px4_gazebo_wind3d/datasets/openfoam_dataset_0.csv</customWindFieldPath>
     </plugin>
     <!-- -->
     <physics name='default_physics' default='0' type='ode'>
