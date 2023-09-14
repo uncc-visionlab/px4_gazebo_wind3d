@@ -248,14 +248,13 @@ namespace gazebo {
                         pt_cloud_vec3._data[pt_idx][2] * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
                 pt_cloud_vec3._data[pt_idx][0];
             }
-            //std::cout << std::endl;
 
             double wind_strength = wind_direction.Length();
             if (wind_strength > wind_velocity_max_) {
                 wind_direction *= wind_velocity_max_ / wind_strength;
             }
             // Get normal distribution wind direction
-            ignition::math::Vector3d wind = wind_strength * wind_direction;
+            ignition::math::Vector3d wind = wind_direction;
             wind_v = new gazebo::msgs::Vector3d();
             wind_v->set_x(wind.X());
             wind_v->set_y(wind.Y());
