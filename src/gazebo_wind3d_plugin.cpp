@@ -212,7 +212,6 @@ namespace gazebo {
             if (link == NULL)
                 return;
             ignition::math::Vector3d link_position = link_->WorldPose().Pos();
-            const std::vector<gazebo::physics::ModelPtr> models = world_->Models();
             const num_t query_pt[3] = {(float) link_position.X(), (float) link_position.Y(), (float) link_position.Z()};
             // ----------------------------------------------------------------
             // knnSearch():  Perform a search for the N closest points
@@ -355,12 +354,13 @@ namespace gazebo {
                 // Generating point cloud of wind field vector measurements
                 pt_cloud_vec3.pts.resize(data.size());
                 pt_cloud_vec3._data.resize(data.size());
-//                pt_cloud_vec3._data.push_back(Vector<3, float>());
+                float pt_avg[3]{0.f, 0.f, 0.f};
                 for (int i = 0; i < data.size(); i++) {
                     pt_cloud_vec3.pts[i].x = data[i][0];
                     pt_cloud_vec3.pts[i].y = data[i][1];
                     pt_cloud_vec3.pts[i].z = data[i][2];
-
+                    for (int j = 0; j < 3; j++)
+                        pt_avg[j] += data[i][j];
                     pt_cloud_vec3._data[i][0] = data[i][3];
                     pt_cloud_vec3._data[i][1] = data[i][4];
                     pt_cloud_vec3._data[i][2] = data[i][5];
@@ -370,13 +370,11 @@ namespace gazebo {
 //                              "(" << pt_cloud_vec3._data[0][0] << ", " << pt_cloud_vec3._data[0][1] << ", " <<
 //                              pt_cloud_vec3._data[0][3] << ")" << std::endl;
                 }
-//                using my_kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
-//                        nanoflann::L2_Simple_Adaptor<num_t, SampledVectorField<num_t, 3>>,
-//                        SampledVectorField<num_t, 3>, 3 /* dim */>;
+                std::cout << "Average sample position is (x,y,z)=(" <<
+                          pt_avg[0] << ", " << pt_avg[1] << pt_avg[2] << ")." << std::endl;
                 //dump_mem_usage();
-//                my_kd_tree_t windfield_kdtree(3, pt_cloud_vec3, {2 /* max elements in a leaf */});
                 windfield_kdtree = new my_kd_tree_t(3, pt_cloud_vec3, {2 /* max elements in a leaf */});
-                const num_t query_pt[3] = {100, 100, 20};
+                const num_t query_pt[3] = {pt_avg[0], pt_avg[1], pt_avg[2]};
                 // ----------------------------------------------------------------
                 // knnSearch():  Perform a search for the N closest points
                 // ----------------------------------------------------------------
@@ -392,15 +390,13 @@ namespace gazebo {
                     ret_index.resize(num_results);
                     out_dist_sqr.resize(num_results);
 
-                    std::cout << "knnSearch(): num_results=" << num_results << std::endl;
+                    std::cout << "knnSearch(): @ average position with num_results=" << num_results << std::endl;
                     for (size_t i = 0; i < num_results; i++)
                         std::cout << "idx[" << i << "]=" << ret_index[i] <<
                                   " (X,Y,Z) = (" << pt_cloud_vec3.pts[ret_index[i]].x << ", " <<
                                   pt_cloud_vec3.pts[ret_index[i]].y << ", " <<
                                   pt_cloud_vec3.pts[ret_index[i]].z << ") " << " dist[" << i
                                   << "]=" << out_dist_sqr[i] << std::endl;
-
-                    std::cout << std::endl;
                 }
 
                 // ----------------------------------------------------------------
@@ -424,64 +420,6 @@ namespace gazebo {
 //                                  << "]=" << ret_matches[i].second << std::endl;
 //                    std::cout << std::endl;
 //                }
-            } else {
-                std::string data_name;
-                float data;
-                // Read the line with the variable name.
-                while (fin >> data_name) {
-                    // Save data on following line into the correct variable.
-                    if (data_name == "min_x:") {
-                        fin >> min_x_;
-                    } else if (data_name == "min_y:") {
-                        fin >> min_y_;
-                    } else if (data_name == "n_x:") {
-                        fin >> n_x_;
-                    } else if (data_name == "n_y:") {
-                        fin >> n_y_;
-                    } else if (data_name == "res_x:") {
-                        fin >> res_x_;
-                    } else if (data_name == "res_y:") {
-                        fin >> res_y_;
-                    } else if (data_name == "vertical_spacing_factors:") {
-                        while (fin >> data) {
-                            vertical_spacing_factors_.push_back(data);
-                            if (fin.peek() == '\n') break;
-                        }
-                    } else if (data_name == "bottom_z:") {
-                        while (fin >> data) {
-                            bottom_z_.push_back(data);
-                            if (fin.peek() == '\n') break;
-                        }
-                    } else if (data_name == "top_z:") {
-                        while (fin >> data) {
-                            top_z_.push_back(data);
-                            if (fin.peek() == '\n') break;
-                        }
-                    } else if (data_name == "u:") {
-                        while (fin >> data) {
-                            u_.push_back(data);
-                            if (fin.peek() == '\n') break;
-                        }
-                    } else if (data_name == "v:") {
-                        while (fin >> data) {
-                            v_.push_back(data);
-                            if (fin.peek() == '\n') break;
-                        }
-                    } else if (data_name == "w:") {
-                        while (fin >> data) {
-                            w_.push_back(data);
-                            if (fin.peek() == '\n') break;
-                        }
-                    } else {
-                        // If invalid data name, read the rest of the invalid line,
-                        // publish a message and ignore data on next line. Then resume reading.
-                        std::string restOfLine;
-                        getline(fin, restOfLine);
-                        gzerr << " [gazebo_wind_plugin] Invalid data name '" << data_name << restOfLine <<
-                              "' in custom wind field text file. Ignoring data on next line.\n";
-                        fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                    }
-                }
             }
             fin.close();
             gzdbg << "[gazebo_wind_plugin] Successfully read custom wind field from text file.\n";

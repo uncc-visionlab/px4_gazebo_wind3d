@@ -153,20 +153,6 @@ namespace gazebo {
         SampledVectorField<num_t,3> pt_cloud_vec3;
         my_kd_tree_t *windfield_kdtree;
 
-        float min_x_;
-        float min_y_;
-        int n_x_;
-        int n_y_;
-        float res_x_;
-        float res_y_;
-        std::vector<float> vertical_spacing_factors_;
-        std::vector<float> bottom_z_;
-        std::vector<float> top_z_;
-        std::vector<float> u_;
-        std::vector<float> v_;
-        std::vector<float> w_;
-
-
         /// \brief  Reads wind data from a text file and saves it.
         /// \param[in] custom_wind_field_path Path to the wind field from ~/.ros.
         void ReadCustomWindField(std::string &custom_wind_field_path);
