@@ -209,9 +209,11 @@ namespace gazebo {
                     }
                 }
             }
+            if (link == NULL)
+                return;
             ignition::math::Vector3d link_position = link_->WorldPose().Pos();
             const std::vector<gazebo::physics::ModelPtr> models = world_->Models();
-            const num_t query_pt[3] = {100, 100, 20};
+            const num_t query_pt[3] = {(float) link_position.X(), (float) link_position.Y(), (float) link_position.Z()};
             // ----------------------------------------------------------------
             // knnSearch():  Perform a search for the N closest points
             // ----------------------------------------------------------------
