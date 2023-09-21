@@ -37,6 +37,12 @@
 #include <nanoflann/nanoflann.hpp>
 #include <nanoflann/utils.h>
 
+// Related work in other Github repositories
+//
+// https://github.com/PX4/PX4-SITL_gazebo-classic/blob/main/src/gazebo_airship_dynamics_plugin.cpp
+// https://github.com/ethz-asl/rotors_simulator/blob/master/rotors_gazebo/launch/mav_with_wind_gust.launch
+// https://github.com/gazebosim/gazebo-classic/blob/gazebo11/plugins/WindPlugin.cc
+
 typedef float num_t;
 
 namespace gazebo {
