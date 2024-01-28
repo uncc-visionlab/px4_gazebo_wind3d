@@ -1,0 +1,13 @@
+syntax = "proto2";
+package wind3d_msgs.msgs;
+
+import "Header.proto";
+import "vector3d.proto";
+
+// Anemometer message type which is emitted by the
+// Anemometer Gazebo plugin
+message Anemometer
+{
+  required gz_std_msgs.Header header = 1;
+  required gazebo.msgs.Vector3d velocity = 2;
+}

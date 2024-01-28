@@ -27,7 +27,7 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
     <include>
       <uri>model://asphalt_plane</uri>
     </include>
-    <plugin name='wind3d_plugin' filename='libgazebo_wind_plugin.so'>
+    <plugin name='wind3d_plugin' filename='libgazebo_wind3d_plugin.so'>
       <frameId>base_link</frameId>
       <robotNamespace/>
       <windVelocityMean>40.0</windVelocityMean>

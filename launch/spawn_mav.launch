@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="mav_name" default="default_fixedwing"/>
+    <arg name="model" default="$(find px4_gazebo_wind3d)/xacro/$(arg mav_name).xacro"/>
+    <arg name="tf_prefix" default="$(optenv ROS_NAMESPACE)"/>
+    <arg name="color" default="Blue"/>    
+    <arg name="pos_x" default = "0.0"/>
+    <arg name="pos_y" default = "0.0"/>
+    <arg name="pos_z" default = "1.0"/>
+    <arg name="roll"  default = "0.0"/>
+    <arg name="pitch" default = "0.0"/>
+    <arg name="yaw"   default = "0.0"/>
+    <arg name="enable_logging" default="false"/>
+    <arg name="enable_ground_truth" default="true"/>
+    <arg name="log_file" default="$(arg mav_name)"/>
+    <arg name="enable_wind" default="true"/>
+    <arg name="robot_namespace" default="/"/>
+    <arg name="gazebo_namespace" default=""/>
+
+    <!-- send the robot XML to param server -->
+    <!--<param name="robot_description" command="$(arg model)" />-->
+    <!-- 
+        /opt/ros/noetic/lib/xacro/xacro /home2/arwillis/uncc_wind_control/ros_wind_control/ros_ws/src/gazebo_px4_drone/xacro/iris.xacro
+    -->
+    <param name="robot_description" command="$(find xacro)/xacro '$(arg model)'
+    mav_name:=$(arg mav_name)
+    color:=$(arg color)"
+    />
+    <param name="tf_prefix" type="string" value="$(arg tf_prefix)" />
+<!--    gazebo_namespace:=$(arg gazebo_namespace)/gazebo
+    robot_namespace:=$(arg robot_namespace)"-->
+
+    <arg name="pose_args" value="-x $(arg pos_x) -y $(arg pos_y) -z $(arg pos_z) -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)"/>
+
+    <!-- push robot_description to factory and spawn robot in gazebo -->
+    <node name="spawn_$(arg mav_name)" pkg="gazebo_ros" type="spawn_model"
+          args="-urdf -param robot_description
+         $(arg pose_args)         
+         -model $(arg mav_name)"
+          respawn="false" output="screen">
+    </node>
+<!--             -gazebo_namespace $(arg gazebo_namespace)/gazebo
+         -robot_namespace $(arg robot_namespace)-->
+
+</launch>

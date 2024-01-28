@@ -3,7 +3,7 @@ cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0054 NEW)
 
-set(PX4_GAZEBO_CLASSIC_SITL_ROOT ../PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/)
+set(PX4_GAZEBO_CLASSIC_SITL_ROOT /home2/arwillis/uncc_wind_control/third_party/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/)
 
 if (NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX "/usr" CACHE STRING "install prefix" FORCE)
@@ -40,6 +40,7 @@ find_package(Boost 1.58 REQUIRED COMPONENTS system thread filesystem)
 find_package(gazebo REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLIB REQUIRED glib-2.0)
+
 # Note: If using catkin, Python 2 is found since it points
 # to the Python libs installed with the ROS distro
 if (NOT CATKIN_DEVEL_PREFIX)
@@ -190,7 +191,7 @@ endif()
 #--------------------#
 # Message Generation #
 #--------------------#
-include_directories(${PX4_GAZEBO_CLASSIC_SITL_ROOT}/include)
+include_directories(${GAZEBO_INCLUDE_DIRS} ${PX4_GAZEBO_CLASSIC_SITL_ROOT}/include)
 set(mav_msgs
   ${PX4_GAZEBO_CLASSIC_SITL_ROOT}/msgs/CommandMotorSpeed.proto
   ${PX4_GAZEBO_CLASSIC_SITL_ROOT}/msgs/MotorSpeed.proto
@@ -214,63 +215,56 @@ set(sensor_msgs
     ${PX4_GAZEBO_CLASSIC_SITL_ROOT}/msgs/MagneticField.proto
     ${PX4_GAZEBO_CLASSIC_SITL_ROOT}/msgs/Pressure.proto
   )
-
+set(wind3d_msgs
+    msgs/ConnectGazeboToRosTopic.proto
+    msgs/Header.proto
+    msgs/Anemometer.proto
+    msgs/WindSpeed.proto
+    msgs/WindServerRegistration.proto
+  )
 PROTOBUF_GENERATE_CPP(MAV_PROTO_SRCS MAV_PROTO_HDRS ${mav_msgs})
-PROTOBUF_GENERATE_CPP(NAV_PROTO_SRCS NAV_PROTO_HDRS ${nav_msgs})
+#PROTOBUF_GENERATE_CPP(NAV_PROTO_SRCS NAV_PROTO_HDRS ${nav_msgs})
 PROTOBUF_GENERATE_CPP(PHY_PROTO_SRCS PHY_PROTO_HDRS ${physics_msgs})
-PROTOBUF_GENERATE_CPP(STD_PROTO_SRCS STD_PROTO_HDRS ${std_msgs})
+#PROTOBUF_GENERATE_CPP(STD_PROTO_SRCS STD_PROTO_HDRS ${std_msgs})
 PROTOBUF_GENERATE_CPP(SEN_PROTO_SRCS SEN_PROTO_HDRS ${sensor_msgs})
+PROTOBUF_GENERATE_CPP(WIND3D_PROTO_SRCS WIND3D_PROTO_HDRS ${wind3d_msgs})
+
 
 add_library(mav_msgs SHARED ${MAV_PROTO_SRCS})
-add_library(nav_msgs SHARED ${NAV_PROTO_SRCS})
+#add_library(nav_msgs SHARED ${NAV_PROTO_SRCS})
 add_library(physics_msgs SHARED ${PHY_PROTO_SRCS})
-add_library(std_msgs SHARED ${STD_PROTO_SRCS})
+#add_library(std_msgs SHARED ${STD_PROTO_SRCS})
 add_library(sensor_msgs SHARED ${SEN_PROTO_SRCS})
+add_library(wind3d_msgs SHARED ${WIND3D_PROTO_SRCS})
 
 #---------#
 # Plugins #
 #---------#
 
-link_libraries(mav_msgs nav_msgs std_msgs sensor_msgs)
-link_libraries(physics_msgs)
+#link_libraries(mav_msgs nav_msgs std_msgs sensor_msgs)
+link_libraries(mav_msgs physics_msgs sensor_msgs wind3d_msgs)
 
-add_library(gazebo_wind3d_plugin SHARED src/gazebo_wind3d_plugin.cpp)
+add_library(gazebo_wind3d_world_plugin SHARED src/gazebo_wind3d_world_plugin.cpp)
 
+add_library(gazebo_dynamic_wind_plugin SHARED src/gazebo_dynamic_wind_plugin.cpp)
+add_library(gazebo_anemometer_plugin SHARED src/gazebo_anemometer_plugin.cpp)
+
+add_library(gazebo_wind3d_motor_model_plugin SHARED src/gazebo_wind3d_motor_model_plugin.cpp)
 
 set(plugins
-  gazebo_wind3d_plugin
+  gazebo_wind3d_world_plugin
+  gazebo_dynamic_wind_plugin
+  gazebo_anemometer_plugin
+  gazebo_wind3d_motor_model_plugin
   )
 
 foreach(plugin ${plugins})
   target_link_libraries(${plugin} ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${TinyXML_LIBRARIES})
 endforeach()
 
-# If BUILD_ROS2_PLUGINS set to ON, build plugins that have ROS dependencies
-# Current plugins that can be used with ROS interface: gazebo_motor_failure_plugin
-if (BUILD_ROS2_PLUGINS)
-  add_library(gazebo_motor_failure_plugin SHARED src/gazebo_motor_failure_plugin.cpp)
-  target_link_libraries(gazebo_motor_failure_plugin ${GAZEBO_libraries} ${rclcpp_LIBRARIES})
-  list(APPEND plugins gazebo_motor_failure_plugin)
-  message(STATUS "adding gazebo_motor_failure_plugin to build")
-
-  include_directories(
-    include
-    ${geometry_msgs_INCLUDE_DIRS}
-    ${sensor_msgs_INCLUDE_DIRS}
-    ${rclcpp_INCLUDE_DIRS}
-  )
-
-  target_link_libraries(gazebo_motor_failure_plugin
-    ${ament_LIBRARIES}
-    ${rclcpp_LIBRARIES}
-    ${GAZEBO_libraries}
-  )
-endif()
-
-
 foreach(plugin ${plugins})
-  add_dependencies(${plugin} mav_msgs nav_msgs std_msgs sensor_msgs)
-  add_dependencies(${plugin} physics_msgs)
+#  add_dependencies(${plugin} mav_msgs nav_msgs std_msgs sensor_msgs)
+  add_dependencies(${plugin} mav_msgs physics_msgs)
 endforeach()
 
 # Configure the setup script

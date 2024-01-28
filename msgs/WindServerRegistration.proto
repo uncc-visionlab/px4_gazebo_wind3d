@@ -1,0 +1,13 @@
+syntax = "proto2";
+package wind3d_msgs.msgs;
+
+// Wind server registrations indicate the link name having a position
+// where the wind field is sampled.
+message WindServerRegistration
+{
+  required string model_name = 1;
+  required string link_name = 2;
+  required string namespace = 3;
+  required string link_wind_topic = 4;
+}
+

@@ -1,0 +1,129 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- SET THIS VARIABLE TO YOUR ROOT FOLDER -->
+    <!-- <arg name="PROJECT_IMAGE_ROOT"                    default="/home.md1/server/DEFENSEWERX/jzhang72/asr_project"/> -->
+    <arg name="PROJECT_IMAGE_ROOT"                default="/home2/arwillis/uncc_wind_control"/>
+    
+    <arg name="run_qgroundcontrol"                default="true"/>
+    <arg name="run_rviz"                          default="true"/>
+    <arg name="run_mavros"                        default="true"/>
+    <arg name="run_mission"                       default="true"/>
+            
+    <!--
+        From the ROS workspace folder run the following two commmands:
+         export ROS_PACKAGE_PATH=$(pwd)/../../third_party/PX4-Autopilot:$(pwd)/../../third_party/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic:$ROS_PACKAGE_PATH
+         source $(pwd)/../../third_party/PX4-Autopilot/Tools/simulation/gazebo-classic/setup_gazebo.bash $(pwd)/../../third_party/PX4-Autopilot $(pwd)/../../third_party/PX4-Autopilot/build/px4_sitl_default
+    -->
+    <!-- Posix SITL environment launch script -->
+    <!-- launches PX4 SITL, Gazebo environment, and spawns vehicle -->
+    <!-- vehicle pose -->
+    <arg name="x" default="0"/>
+    <arg name="y" default="0"/>
+    <arg name="z" default="0"/>
+    <arg name="R" default="0"/>
+    <arg name="P" default="0"/>
+    <arg name="Y" default="0"/>
+    <!-- vehicle model and world -->
+    <arg name="est" default="ekf2"/>
+    <arg name="vehicle" default="iris"/>
+    
+    <arg name="world_A" default="$(find mavlink_sitl_gazebo)/worlds/empty.world"/>
+    <arg name="world_B" default="$(find px4_gazebo_wind3d)/worlds/windy_static.world"/>
+    <arg name="world_C" default="$(find px4_gazebo_wind3d)/worlds/windy_custom.world"/>
+    <arg name="world" default="$(arg world_C)"/>
+    <!--
+    <arg name="sdf" default="$(find mavlink_sitl_gazebo)/models/$(arg vehicle)/$(arg vehicle).sdf"/>
+    -->
+
+    <env name="PX4_SIM_MODEL" value="gazebo-classic_$(arg vehicle)" />
+
+    <!-- gazebo configs -->
+    <arg name="gui" default="true"/>
+    <arg name="debug" default="false"/>
+    <arg name="verbose" default="false"/>
+    <arg name="paused" default="false"/>
+    <arg name="respawn_gazebo" default="false"/>
+    <!-- PX4 configs -->
+    <arg name="interactive" default="true"/>
+    <!-- PX4 SITL -->
+    <arg unless="$(arg interactive)" name="px4_command_arg1" value="-d"/>
+    <arg     if="$(arg interactive)" name="px4_command_arg1" value=""/>
+    <node name="sitl" pkg="px4" type="px4" output="screen"
+        args="$(find px4)/build/px4_sitl_default/etc -s etc/init.d-posix/rcS $(arg px4_command_arg1)" required="true"/>
+    
+    <arg name="existing_gazebo_plugin_path" default="$(optenv GAZEBO_PLUGIN_PATH)" />
+    <arg name="existing_ld_library_path" default="$(optenv LD_LIBRARY_PATH)" />
+    <env name="GAZEBO_PLUGIN_PATH" value="$(arg existing_gazebo_plugin_path):$(arg PROJECT_IMAGE_ROOT)/ros_image/ros_ws/devel/lib" />
+    <env name="LD_LIBRARY_PATH" value="$(arg existing_ld_library_path):$(arg PROJECT_IMAGE_ROOT)/ros_image/ros_ws/devel/lib" />
+    <!--
+        export GAZEBO_PLUGIN_PATH=/home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/lib:${GAZEBO_PLUGIN_PATH}
+        export LD_LIBRARY_PATH=/home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/lib:${LD_LIBRARY_PATH}
+    -->
+    <!-- Gazebo sim -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="world_name" value="$(arg world)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="verbose" value="$(arg verbose)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="respawn_gazebo" value="$(arg respawn_gazebo)"/>
+    </include>
+    <!-- gazebo model -->
+    
+    <!--<node name="$(anon vehicle_spawn)" pkg="gazebo_ros" type="spawn_model" output="screen" args="-sdf -file $(arg sdf) -model $(arg vehicle) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/>-->
+    
+    <!-- Spawn MAV -->
+        
+    <include file="$(find px4_gazebo_wind3d)/launch/spawn_mav.launch">
+        <arg name="mav_name"            value="$(arg vehicle)" />
+        <arg name="model"               value="$(find px4_gazebo_wind3d)/xacro/$(arg vehicle).xacro" />
+        <arg name="pos_x"               value="$(arg x)"/>
+        <arg name="pos_y"               value="$(arg y)"/>
+        <arg name="pos_z"               value="$(arg z)"/>
+        <arg name="roll"                value="$(arg R)"/>
+        <arg name="pitch"               value="$(arg P)"/>
+        <arg name="yaw"                 value="$(arg Y)"/>
+        <arg name="robot_namespace"     value="/"/>        
+    </include>
+    <!--
+    <node pkg="gazebo_px4_drone" name="gazebo_px4_drone" args="" type="gazebo_px4_drone" output="screen"/>
+    -->
+
+    <!-- rviz configs and LAUNCH -->
+    <node pkg="tf" type="static_transform_publisher" name="world2bot" args="1 0 0 0 0 0 map /odom_enu 50" />
+    
+    <arg name="rviz_config_file" default="wind3d_drone_demo.rviz"/>
+    <node pkg="rviz" type="rviz" name="rviz" output="screen" 
+          args="-d $(find gazebo_px4_drone)/rviz/$(arg rviz_config_file)" if="$(arg run_rviz)"/>
+
+    <!-- Paths to essential applications -->
+    <arg name="QGROUNDCONTROL_ROOT" default="$(arg PROJECT_IMAGE_ROOT)/third_party/QGroundControl"/>
+    <!-- QGroundControl LAUNCH -->
+    <node pkg="gazebo_px4_drone" name="qgroundcntrol_script"  
+          args="$(arg QGROUNDCONTROL_ROOT)" type="run_qgroundcontrol.sh" if="$(arg run_qgroundcontrol)"/>
+    
+    <!-- Load the urdf into the parameter server. -->
+    <!--<param name="my_robot_description" textfile="$(find uncc_gimbal_tracker)/urdf/$(arg vehicle).urdf"/>-->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" >
+      <!--<remap from="robot_description" to="my_robot_description" />-->
+      <!--<remap from="joint_states" to="different_joint_states" />-->
+    </node>
+
+    <!-- <node pkg="gazebo_px4_drone" name="mavros_autopilot" type="mavros_autopilot_01.py" output="screen"/> -->
+    <node pkg="gazebo_px4_drone" name="mission_test" type="mission_test.py" output="screen" if="$(arg run_mission)">
+        <param name="mission_name"        value="MC_mission_box.plan"/>
+    </node>
+
+    <!-- MAVROS -->
+    <!-- GCS link is provided by SITL -->
+    <!-- MAVROS configs -->
+    <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
+    <arg name="gcs_url" default="" />
+    <arg name="respawn_mavros" default="false" />
+    <include file="$(find mavros)/launch/px4.launch" if="$(arg run_mavros)">
+        <arg name="gcs_url" value="$(arg gcs_url)"/>
+        <arg name="fcu_url" value="$(arg fcu_url)"/>
+        <arg name="respawn_mavros" value="$(arg respawn_mavros)"/>
+    </include>    
+</launch>
+    
