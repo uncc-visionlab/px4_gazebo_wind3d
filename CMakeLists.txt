@@ -53,17 +53,10 @@ pkg_search_module(GLIB REQUIRED glib-2.0)
 if (NOT NO_ROS)
   find_package(catkin REQUIRED COMPONENTS
     gazebo_plugins
-#    cv_bridge
     geometry_msgs
 #    mav_msgs
     message_generation
-#    octomap_msgs
-#    octomap_ros
-#    rosbag
     roscpp
-#    rotors_comm
-#    rotors_control
-#    std_srvs
     std_msgs
     tf
   )
