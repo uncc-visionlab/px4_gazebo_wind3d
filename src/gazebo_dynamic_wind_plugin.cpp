@@ -28,8 +28,7 @@
 #include "ConnectGazeboToRosTopic.pb.h"
 #include "WindServerRegistration.pb.h"
 
-namespace gazebo
-{
+namespace gazebo {
 
     GazeboDynamicWindPlugin::~GazeboDynamicWindPlugin() {
 
@@ -102,25 +101,21 @@ namespace gazebo
         // Get the current simulation time.
         common::Time now = world_->SimTime();
 
-        ignition::math::Vector3d wind_velocity(0.0, 0.0, 0.0);
+        UpdateForcesAndMoments();
+        Publish();
+    }
 
-        // Choose user-specified method for calculating wind velocity.
-        // Calculate the wind force.
-        //        double wind_strength = wind_force_mean_;
-        //        ignition::math::Vector3d wind = wind_strength * wind_direction_;
-        //        // Apply a force from the constant wind to the link.
-        //        link_->AddForceAtRelativePosition(wind, xyz_offset_);
-        //
-        ignition::math::Vector3d wind(0.0, 0.0, 0.0);
-        ignition::math::Vector3d wind_gust(0.0, 0.0, 0.0);
-        // Calculate the wind gust force.
-        //        if (now >= wind_gust_start_ && now < wind_gust_end_) {
-        //            double wind_gust_strength = wind_gust_force_mean_;
-        //            wind_gust = wind_gust_strength * wind_gust_direction_;
-        //            // Apply a force from the wind gust to the link.
-        //            link_->AddForceAtRelativePosition(wind_gust, xyz_offset_);
-        //        }
-
+    void GazeboDynamicWindPlugin::UpdateForcesAndMoments() {
+#if GAZEBO_MAJOR_VERSION >= 9
+        ignition::math::Vector3d body_velocity = link_->WorldLinearVel();
+#else
+        ignition::math::Vector3d body_velocity = ignitionFromGazeboMath(link_->GetWorldLinearVel());
+#endif
+        ignition::math::Vector3d wind_vel_ = wind_speed_W_;
+        ignition::math::Vector3d relative_wind_velocity = body_velocity - wind_vel_;        
+        //link_->AddRelativeForce(0.1*relative_wind_velocity);
+        link_->AddForce(0.1*relative_wind_velocity);
+        //link_->AddForceAtRelativePosition(wind, xyz_offset_);
         //wrench_stamped_msg_.mutable_header()->set_frame_id(frame_id_);
         //wrench_stamped_msg_.mutable_header()->mutable_stamp()->set_sec(now.sec);
         //wrench_stamped_msg_.mutable_header()->mutable_stamp()->set_nsec(now.nsec);
@@ -136,8 +131,14 @@ namespace gazebo
         //wrench_stamped_msg_.mutable_wrench()->mutable_torque()->set_x(0);
         //wrench_stamped_msg_.mutable_wrench()->mutable_torque()->set_y(0);
         //wrench_stamped_msg_.mutable_wrench()->mutable_torque()->set_z(0);
+    }
 
-        //wind_force_pub_->Publish(wrench_stamped_msg_);
+    void GazeboDynamicWindPlugin::Publish() {
+        //if (publish_force_) {
+        //    force_msg_.set_data(joint_->GetForce(0));
+        //    motor_force_pub_->Publish(force_msg_);
+        //}
+        //wind_force_pub_->Publish(wrench_stamped_msg_);        
     }
 
     void GazeboDynamicWindPlugin::WindSpeedCallback(GzWindSpeedMsgPtr & wind_speed_msg) {
@@ -170,7 +171,7 @@ namespace gazebo
         register_msg.set_link_name(link_name_);
         register_msg.set_model_name(model_->GetName());
         register_msg.set_namespace_(namespace_);
-        register_msg.set_link_wind_topic(wind_server_link_wind_topic_);        
+        register_msg.set_link_wind_topic(wind_server_link_wind_topic_);
         wind_server_register_pub_->Publish(register_msg);
 
         // ============================================ //

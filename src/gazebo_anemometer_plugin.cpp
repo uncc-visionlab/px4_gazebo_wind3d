@@ -73,7 +73,7 @@ namespace gazebo {
                 wind_server_reglink_topic_);
         getSdfParam<std::string>(_sdf, "windServerLinkTopic", wind_server_link_wind_topic_,
                 wind_server_link_wind_topic_);
-        
+
         // Retrieve the rest of the SDF parameters.
         getSdfParam<std::string>(_sdf, "anemometerTopic", anemometer_topic_, kDefaultAnemometerPubTopic);
         //        getSdfParam<double>(_sdf, "referenceAltitude", ref_alt_, kDefaultRefAlt);
@@ -118,7 +118,7 @@ namespace gazebo {
 
         // Get the current geometric height.
         //double height_geometric_m = model_->WorldPose().Pos().Z();
-        
+
         // Compute the anemometer_reading   
         // actual sensor output = wind velocity + vehicle translational velocity +  velocity due to vehicle rotation + noise
         ignition::math::Vector3d body_velocity_W = link_->WorldLinearVel();
@@ -157,18 +157,14 @@ namespace gazebo {
         wind_speed_W_.Y() = wind_speed_msg->velocity().y();
         wind_speed_W_.Z() = wind_speed_msg->velocity().z();
     }
-    
+
     void GazeboAnemometerPlugin::CreatePubsAndSubs() {
-        // Create temporary "ConnectGazeboToRosTopic" publisher and message.
-        //        gazebo::transport::PublisherPtr connect_gazebo_to_ros_topic_pub =
-        //                node_handle_->Advertise<gz_std_msgs::ConnectGazeboToRosTopic>(
-        //                "~/" + kConnectGazeboToRosSubtopic, 1);
-        gz_std_msgs::ConnectGazeboToRosTopic connect_gazebo_to_ros_topic_msg;
+        // Gazebo publishers and subscribers
         wind_server_register_pub_ = node_handle_->Advertise<wind3d_msgs::msgs::WindServerRegistration>(
                 wind_server_reglink_topic_, 1);
         wind_server_link_wind_msg_sub_ = node_handle_->Subscribe<physics_msgs::msgs::Wind>(wind_server_link_wind_topic_,
                 &GazeboAnemometerPlugin::WindSpeedCallback, this);
-        
+
         // Register this plugin with the world dynamic wind server
         wind3d_msgs::msgs::WindServerRegistration register_msg;
         register_msg.set_link_name(link_name_);
@@ -178,21 +174,25 @@ namespace gazebo {
         wind_server_register_pub_->Publish(register_msg);
 
         // ============================================ //
-        // ========= FLUID PRESSURE MSG SETUP ========= //
+        // ====== ANEMOMETER PRESSURE MSG SETUP ======= //
         // ============================================ //
 
         anemometer_pub_ = node_handle_->Advertise<wind3d_msgs::msgs::Anemometer>(
                 "~/" + namespace_ + "/" + anemometer_topic_, 1);
 
-        //gz_std_msgs::ConnectGazeboToRosTopic connect_gazebo_to_ros_topic_msg;
-        //connect_gazebo_to_ros_topic_msg.set_gazebo_topic("~/" + namespace_ + "/" +
-        //        anemometer_topic_);
-        //connect_gazebo_to_ros_topic_msg.set_ros_topic(namespace_ + "/" +
-        //        anemometer_topic_);
-        //connect_gazebo_to_ros_topic_msg.set_msgtype(
-        //        gz_std_msgs::ConnectGazeboToRosTopic::FLUID_PRESSURE);
-        //connect_gazebo_to_ros_topic_pub->Publish(connect_gazebo_to_ros_topic_msg,
-        //        true);
+        // Create temporary "ConnectGazeboToRosTopic" publisher and message.
+        gazebo::transport::PublisherPtr connect_gazebo_to_ros_topic_pub =
+                node_handle_->Advertise<gz_std_msgs::ConnectGazeboToRosTopic>(
+                "~/" + kConnectGazeboToRosSubtopic, 1);
+        gz_std_msgs::ConnectGazeboToRosTopic connect_gazebo_to_ros_topic_msg;
+        connect_gazebo_to_ros_topic_msg.set_gazebo_topic("~/" + namespace_ + "/" +
+                anemometer_topic_);
+        connect_gazebo_to_ros_topic_msg.set_ros_topic(namespace_ + "/" +
+                anemometer_topic_);
+        connect_gazebo_to_ros_topic_msg.set_msgtype(
+                gz_std_msgs::ConnectGazeboToRosTopic::VECTOR_3D_STAMPED);
+//        connect_gazebo_to_ros_topic_pub->Publish(connect_gazebo_to_ros_topic_msg,
+//                true);
     }
 
     GZ_REGISTER_MODEL_PLUGIN(GazeboAnemometerPlugin);
