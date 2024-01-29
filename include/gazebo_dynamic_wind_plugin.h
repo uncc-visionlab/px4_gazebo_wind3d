@@ -94,6 +94,8 @@ namespace gazebo {
 
         virtual ~GazeboDynamicWindPlugin();
 
+        virtual void Publish();
+
     protected:
 
         /// \brief Load the plugin.
@@ -104,6 +106,8 @@ namespace gazebo {
         /// \brief Called when the world is updated.
         /// \param[in] _info Update timing information.
         void OnUpdate(const common::UpdateInfo& /*_info*/);
+        
+        void UpdateForcesAndMoments();
 
     private:
 
@@ -118,7 +122,6 @@ namespace gazebo {
         void CreatePubsAndSubs();
 
         void WindSpeedCallback(GzWindSpeedMsgPtr& wind_speed_msg);
-        
         /// \brief    Pointer to the update event connection.
         event::ConnectionPtr update_connection_;
 

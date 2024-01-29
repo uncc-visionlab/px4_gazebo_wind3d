@@ -45,6 +45,9 @@ namespace gazebo {
     // Default values
     static const std::string kDefaultAnemometerPubTopic = "anemometer";
 
+    static const std::string kConnectGazeboToRosSubtopic = "connect_gazebo_to_ros_subtopic";
+    static const std::string kConnectRosToGazeboSubtopic = "connect_ros_to_gazebo_subtopic";
+
     typedef const boost::shared_ptr<const physics_msgs::msgs::Wind>& GzWindSpeedMsgPtr;
     
     class GazeboAnemometerPlugin : public ModelPlugin {
