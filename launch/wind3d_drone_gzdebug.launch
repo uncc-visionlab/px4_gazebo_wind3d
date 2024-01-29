@@ -11,9 +11,16 @@
             
     <!--
         From the ROS workspace folder run the following two commmands:
+         source /opt/ros/noetic/setup.bash 
+         source /home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/setup.bash 
          export ROS_PACKAGE_PATH=$(pwd)/../../third_party/PX4-Autopilot:$(pwd)/../../third_party/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic:$ROS_PACKAGE_PATH
          source $(pwd)/../../third_party/PX4-Autopilot/Tools/simulation/gazebo-classic/setup_gazebo.bash $(pwd)/../../third_party/PX4-Autopilot $(pwd)/../../third_party/PX4-Autopilot/build/px4_sitl_default
     -->
+    <!--
+        export GAZEBO_PLUGIN_PATH=/home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/lib:${GAZEBO_PLUGIN_PATH}
+        export LD_LIBRARY_PATH=/home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/lib:${LD_LIBRARY_PATH}
+    -->
+
     <!-- Posix SITL environment launch script -->
     <!-- launches PX4 SITL, Gazebo environment, and spawns vehicle -->
     <!-- vehicle pose -->
@@ -55,10 +62,7 @@
     <arg name="existing_ld_library_path" default="$(optenv LD_LIBRARY_PATH)" />
     <env name="GAZEBO_PLUGIN_PATH" value="$(arg existing_gazebo_plugin_path):$(arg PROJECT_IMAGE_ROOT)/ros_image/ros_ws/devel/lib" />
     <env name="LD_LIBRARY_PATH" value="$(arg existing_ld_library_path):$(arg PROJECT_IMAGE_ROOT)/ros_image/ros_ws/devel/lib" />
-    <!--
-        export GAZEBO_PLUGIN_PATH=/home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/lib:${GAZEBO_PLUGIN_PATH}
-        export LD_LIBRARY_PATH=/home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/lib:${LD_LIBRARY_PATH}
-    -->
+
     <!-- Gazebo sim -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="gui" value="$(arg gui)"/>
