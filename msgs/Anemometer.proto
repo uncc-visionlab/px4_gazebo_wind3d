@@ -1,5 +1,5 @@
 syntax = "proto2";
-package wind3d_msgs.msgs;
+package gz_sensor_msgs.msgs;
 
 import "Header.proto";
 import "vector3d.proto";

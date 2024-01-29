@@ -28,6 +28,7 @@
 #include <mav_msgs/default_topics.h>  // This comes from the mav_comm repo
 
 #include "Anemometer.pb.h"
+#include "ConnectGazeboToRosTopic.pb.h"
 #include "Wind.pb.h"
 
 #include "common.h"
@@ -140,10 +141,12 @@ namespace gazebo {
         /// \details  This is modified every time OnUpdate() is called,
         //            and then published onto a topic
         physics_msgs::msgs::Wind wind_speed_msg_;
-        wind3d_msgs::msgs::Anemometer anemometer_message_;
+        gz_sensor_msgs::msgs::Anemometer anemometer_message_;
         ignition::math::Vector3d wind_speed_W_;
 
-        std::mt19937 random_generator_;
+        std::mt19937 random_generator_X_;
+        std::mt19937 random_generator_Y_;
+        std::mt19937 random_generator_Z_;
     };
 }
 

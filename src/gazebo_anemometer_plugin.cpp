@@ -76,9 +76,6 @@ namespace gazebo {
 
         // Retrieve the rest of the SDF parameters.
         getSdfParam<std::string>(_sdf, "anemometerTopic", anemometer_topic_, kDefaultAnemometerPubTopic);
-        //        getSdfParam<double>(_sdf, "referenceAltitude", ref_alt_, kDefaultRefAlt);
-        //        getSdfParam<double>(_sdf, "pressureVariance", pressure_var_, kDefaultPressureVar);
-        //        CHECK(pressure_var_ >= 0.0);
 
         // Wind topic publishing rates
         double pub_rate = 2.0;
@@ -87,7 +84,7 @@ namespace gazebo {
 
         // Initialize the normal distribution for pressure.
         double mean = 0.0;
-        //anemometer_n_[0] = NormalDistribution(mean, sqrt(anemometer_var_));
+
         anemometer_velocity_distribution_X_ = std::normal_distribution<double>(mean, sqrt(noise_var_.X()));
         anemometer_velocity_distribution_Y_ = std::normal_distribution<double>(mean, sqrt(noise_var_.Y()));
         anemometer_velocity_distribution_Z_ = std::normal_distribution<double>(mean, sqrt(noise_var_.Z()));
@@ -127,9 +124,9 @@ namespace gazebo {
         ignition::math::Vector3d anemometer_value = body_velocity_W + body_velocity_R + wind_velocity;
 
         // Add noise to the measurement.
-        anemometer_value.X() += anemometer_velocity_distribution_X_(random_generator_);
-        anemometer_value.Y() += anemometer_velocity_distribution_Y_(random_generator_);
-        anemometer_value.Z() += anemometer_velocity_distribution_Z_(random_generator_);
+        anemometer_value.X() += anemometer_velocity_distribution_X_(random_generator_X_);
+        anemometer_value.Y() += anemometer_velocity_distribution_Y_(random_generator_Y_);
+        anemometer_value.Z() += anemometer_velocity_distribution_Z_(random_generator_Z_);
 
         // Fill the anemometer message.
         anemometer_message_.mutable_header()->mutable_stamp()->set_sec(
@@ -160,6 +157,10 @@ namespace gazebo {
 
     void GazeboAnemometerPlugin::CreatePubsAndSubs() {
         // Gazebo publishers and subscribers
+
+        // ==================================== //
+        // ====== WIND SERVER MSG SETUP ======= //
+        // ==================================== //
         wind_server_register_pub_ = node_handle_->Advertise<wind3d_msgs::msgs::WindServerRegistration>(
                 wind_server_reglink_topic_, 1);
         wind_server_link_wind_msg_sub_ = node_handle_->Subscribe<physics_msgs::msgs::Wind>(wind_server_link_wind_topic_,
@@ -173,11 +174,11 @@ namespace gazebo {
         register_msg.set_link_wind_topic(wind_server_link_wind_topic_);
         wind_server_register_pub_->Publish(register_msg);
 
-        // ============================================ //
-        // ====== ANEMOMETER PRESSURE MSG SETUP ======= //
-        // ============================================ //
+        // ================================================= //
+        // ====== ANEMOMETER GAZEBO -> ROS MSG SETUP ======= //
+        // ================================================= //
 
-        anemometer_pub_ = node_handle_->Advertise<wind3d_msgs::msgs::Anemometer>(
+        anemometer_pub_ = node_handle_->Advertise<gz_sensor_msgs::msgs::Anemometer>(
                 "~/" + namespace_ + "/" + anemometer_topic_, 1);
 
         // Create temporary "ConnectGazeboToRosTopic" publisher and message.
@@ -190,9 +191,9 @@ namespace gazebo {
         connect_gazebo_to_ros_topic_msg.set_ros_topic(namespace_ + "/" +
                 anemometer_topic_);
         connect_gazebo_to_ros_topic_msg.set_msgtype(
-                gz_std_msgs::ConnectGazeboToRosTopic::VECTOR_3D_STAMPED);
-//        connect_gazebo_to_ros_topic_pub->Publish(connect_gazebo_to_ros_topic_msg,
-//                true);
+                gz_std_msgs::ConnectGazeboToRosTopic::ANEMOMETER);
+        connect_gazebo_to_ros_topic_pub->Publish(connect_gazebo_to_ros_topic_msg,
+                true);
     }
 
     GZ_REGISTER_MODEL_PLUGIN(GazeboAnemometerPlugin);

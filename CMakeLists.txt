@@ -5,6 +5,11 @@ cmake_policy(SET CMP0054 NEW)
 
 set(PX4_GAZEBO_CLASSIC_SITL_ROOT /home2/arwillis/uncc_wind_control/third_party/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/)
 
+if(NOT DEFINED NO_ROS)
+  message(STATUS "NO_ROS variable not provided, setting to FALSE.")
+  set(NO_ROS FALSE)
+endif()
+
 if (NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX "/usr" CACHE STRING "install prefix" FORCE)
 endif()
@@ -37,9 +42,39 @@ include(GNUInstallDirs)
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost 1.58 REQUIRED COMPONENTS system thread filesystem)
+#find_package(Eigen REQUIRED)
 find_package(gazebo REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLIB REQUIRED glib-2.0)
+
+# ============================================== #
+# ==================== CATKIN ================== #
+# ============================================== #
+if (NOT NO_ROS)
+  find_package(catkin REQUIRED COMPONENTS
+    gazebo_plugins
+#    cv_bridge
+    geometry_msgs
+#    mav_msgs
+    message_generation
+#    octomap_msgs
+#    octomap_ros
+#    rosbag
+    roscpp
+#    rotors_comm
+#    rotors_control
+#    std_srvs
+    std_msgs
+    tf
+  )
+endif()
+
+add_message_files(
+  FILES
+  Anemometer.msg
+)
+
+generate_messages(DEPENDENCIES geometry_msgs std_msgs)
 
 # Note: If using catkin, Python 2 is found since it points
 # to the Python libs installed with the ROS distro
@@ -115,6 +150,7 @@ else()
 endif()
 
 find_package(Eigen3 QUIET)
+
 if(NOT EIGEN3_FOUND)
   # Fallback to cmake_modules
   find_package(Eigen QUIET)
@@ -217,6 +253,7 @@ set(sensor_msgs
   )
 set(wind3d_msgs
     msgs/ConnectGazeboToRosTopic.proto
+    msgs/ConnectRosToGazeboTopic.proto
     msgs/Header.proto
     msgs/Anemometer.proto
     msgs/WindSpeed.proto
@@ -229,6 +266,37 @@ PROTOBUF_GENERATE_CPP(PHY_PROTO_SRCS PHY_PROTO_HDRS ${physics_msgs})
 PROTOBUF_GENERATE_CPP(SEN_PROTO_SRCS SEN_PROTO_HDRS ${sensor_msgs})
 PROTOBUF_GENERATE_CPP(WIND3D_PROTO_SRCS WIND3D_PROTO_HDRS ${wind3d_msgs})
 
+
+# ============================================== #
+# ==================== CATKIN ================== #
+# ============================================== #
+
+if (NOT NO_ROS)
+
+  if(${gazebo_dev_FOUND})
+    catkin_package(
+      INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
+#      LIBRARIES rotors_gazebo_motor_model rotors_gazebo_controller_interface
+#      CATKIN_DEPENDS cv_bridge geometry_msgs mav_msgs octomap_msgs octomap_ros rosbag roscpp gazebo_plugins rotors_comm rotors_control std_srvs tf
+#      DEPENDS Eigen octomap OpenCV
+      #CFG_EXTRAS rotors_gazebo_plugins.cmake
+    )
+    set(target_linking_LIBRARIES ${catkin_LIBRARIES} ${gazebo_dev_LIBRARIES})
+  else()
+    catkin_package(
+      INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
+#      LIBRARIES rotors_gazebo_motor_model rotors_gazebo_controller_interface
+#      CATKIN_DEPENDS cv_bridge geometry_msgs mav_msgs octomap_msgs octomap_ros rosbag roscpp gazebo_plugins rotors_comm rotors_control std_srvs tf
+#      DEPENDS Eigen octomap OpenCV
+      #CFG_EXTRAS rotors_gazebo_plugins.cmake
+    )
+    set(target_linking_LIBRARIES ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+  endif()
+endif()
+
+# =============================================================================================== #
+# ========================================= USER LIBRARIES ====================================== #
+# =============================================================================================== #
 
 add_library(mav_msgs SHARED ${MAV_PROTO_SRCS})
 #add_library(nav_msgs SHARED ${NAV_PROTO_SRCS})
@@ -272,6 +340,15 @@ if (catkin_FOUND)
   catkin_add_env_hooks(50_sitl_gazebo_setup
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
     SHELLS sh)
+endif()
+
+#===================================== ROS INTERFACE PLUGIN =====================================//
+# This entire plugin is only built if ROS is a dependency
+if (NOT NO_ROS)
+  add_library(gazebo_ros_interface_plugin SHARED src/gazebo_ros_interface_plugin.cpp)
+  target_link_libraries(gazebo_ros_interface_plugin ${target_linking_LIBRARIES} )
+  add_dependencies(gazebo_ros_interface_plugin ${catkin_EXPORTED_TARGETS})
+  list(APPEND targets_to_install gazebo_ros_interface_plugin)
 endif()
 
 #############

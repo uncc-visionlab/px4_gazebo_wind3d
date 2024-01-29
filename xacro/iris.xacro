@@ -210,7 +210,7 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
       <publishRate>5</publishRate>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
       <windServerLinkTopic>/gazebo/default/dynamics_wind</windServerLinkTopic>
-    </plugin>
+    </plugin>  
     <plugin name='magnetometer_plugin' filename='libgazebo_magnetometer_plugin.so'>
       <robotNamespace/>
       <pubRate>100</pubRate>
