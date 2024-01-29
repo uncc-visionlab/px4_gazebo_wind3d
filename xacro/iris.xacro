@@ -194,11 +194,11 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
       <robotNamespace></robotNamespace>
       <linkName>/base_link</linkName>
       <pubRate>10</pubRate>
-      <noiseX>0.0004</noiseX>
-      <noiseY>0.0004</noiseY>
-      <noiseZ>0.0004</noiseZ>
+      <noiseX>0.0000</noiseX>
+      <noiseY>0.0000</noiseY>
+      <noiseZ>0.0000</noiseZ>
       <publishRate>5</publishRate>
-      <anemometerTopic>anemometer</anemometerTopic>
+      <anemometerTopic>/iris/anemometer</anemometerTopic>
       <windPubTopic>world_wind</windPubTopic>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
       <windServerLinkTopic>/gazebo/default/anemometer_wind</windServerLinkTopic>
