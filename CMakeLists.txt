@@ -173,6 +173,7 @@ endforeach()
 include_directories(
   include
   ${Boost_INCLUDE_DIR}
+  ${catkin_INCLUDE_DIRS}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${EIGEN3_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}/eigen3	# Workaround for Eigen3
