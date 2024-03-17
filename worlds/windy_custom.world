@@ -34,11 +34,26 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
       <publishRate>2.0</publishRate>
       <robotNamespace/>
       <useCustomStaticWindField>true</useCustomStaticWindField>
-      <customWindFieldPath>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/openfoam_dataset_0.csv</customWindFieldPath>
+      <customStaticWindFieldPath>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/openfoam_dataset_0.csv</customStaticWindFieldPath>
       <windPubTopic>world_wind</windPubTopic>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
-   </plugin>
+    </plugin>
     <!-- -->
+    <!-- 
+    <plugin name='wind3d_plugin' filename='libgazebo_wind3d_world_plugin.so'>
+      <frameId>base_link</frameId>
+      <linkName>base_link</linkName>
+      <publishRate>2.0</publishRate>
+      <robotNamespace/>
+      <useCustomDynamicWindField>true</useCustomDynamicWindField>
+      <customDynamicWindFieldPath_XYZ>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/points_xyz.csv</customDynamicWindFieldPath_XYZ>
+      <customDynamicWindFieldPath_U>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/FFT_U_velocity.csv</customDynamicWindFieldPath_U>
+      <customDynamicWindFieldPath_V>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/FFT_V_velocity.csv</customDynamicWindFieldPath_V>
+      <customDynamicWindFieldPath_W>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/FFT_W_velocity.csv</customDynamicWindFieldPath_W>
+      <windPubTopic>world_wind</windPubTopic>
+      <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
+    </plugin>
+    -->
    <plugin name="ros_interface_plugin" filename="libgazebo_ros_interface_plugin.so">
      <robotNamespace></robotNamespace>
    </plugin> 
@@ -100,6 +115,7 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
           </surface>
         </collision>
         <visual name='visual'>
+          <!-- <plugin name="sphere_wind3d_visual" filename="libgazebo_wind3d_visual_plugin.so"/> -->
           <geometry>
             <sphere>
               <radius>0.5</radius>

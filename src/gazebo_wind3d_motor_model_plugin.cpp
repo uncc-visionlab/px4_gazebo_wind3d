@@ -23,8 +23,7 @@
 #include "gazebo_wind3d_motor_model_plugin.h"
 #include <ignition/math.hh>
 
-namespace gazebo
-{
+namespace gazebo {
 
     GazeboWind3DMotorModel::~GazeboWind3DMotorModel() {
         updateConnection_->~Connection();
@@ -41,10 +40,10 @@ namespace gazebo
     }
 
     void GazeboWind3DMotorModel::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
+        gzdbg << __FUNCTION__ << "() called." << std::endl;
         model_ = _model;
 
         namespace_.clear();
-
         if (_sdf->HasElement("robotNamespace"))
             namespace_ = _sdf->GetElement("robotNamespace")->Get<std::string>();
         else
@@ -185,7 +184,7 @@ namespace gazebo
         if (rot_velocities->motor_speed_size() < motor_number_) {
             std::cout << "You tried to access index " << motor_number_
                     << " of the MotorSpeed message array which is of size " << rot_velocities->motor_speed_size() << "." << std::endl;
-        } else ref_motor_rot_vel_ = std::min(static_cast<double>(rot_velocities->motor_speed(motor_number_)), static_cast<double>(max_rot_velocity_));
+        } else ref_motor_rot_vel_ = std::min(static_cast<double> (rot_velocities->motor_speed(motor_number_)), static_cast<double> (max_rot_velocity_));
     }
 
     void GazeboWind3DMotorModel::MotorFailureCallback(const boost::shared_ptr<const msgs::Int> &fail_msg) {
@@ -234,7 +233,7 @@ namespace gazebo
         // Moments
         // Getting the parent link, such that the resulting torques can be applied to it.
         physics::Link_V parent_links = link_->GetParentJointsLinks();
-        // The tansformation from the parent_link to the link_.
+        // The transformation from the parent_link to the link_.
 #if GAZEBO_MAJOR_VERSION >= 9
         ignition::math::Pose3d pose_difference = link_->WorldCoGPose() - parent_links.at(0)->WorldCoGPose();
 #else

@@ -63,18 +63,18 @@
           </xacro:if>
           <xacro:unless value="${use_mesh_file}">
             <box size="${body_width} ${body_width} ${body_height}"/> <!-- [m] [m] [m] -->
-          </xacro:unless>
+         </xacro:unless>
         </geometry>
-      </visual>
+      </visual> 
 
-      <collision>
+     <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
           <box size="${body_width} ${body_width} ${body_height}" /> <!-- [m] [m] [m] -->
         </geometry>
       </collision>
     </link>
-    
+
     <!-- attach multirotor_base_plugin to the base_link -->
     <gazebo>
       <plugin name='multirotor_base_plugin' filename='libgazebo_multirotor_base_plugin.so'>
@@ -105,8 +105,8 @@
         <xacro:insert_block name="inertia" />
       </inertial>
       <visual>
-        <geometry>
-          <!-- <cylinder length="0.005" radius="${radius_rotor}"/> --> <!-- [m] -->
+        <geometry>         
+            <!-- <cylinder length="0.005" radius="${radius_rotor}"/> --> <!-- [m] -->
           <xacro:if value="${use_own_mesh}">
             <mesh filename="${mesh}"
               scale="1 1 1" />
@@ -125,7 +125,8 @@
       </collision>
     </link>
     <gazebo>
-      <plugin name="${robot_namespace}_${suffix}_motor_model" filename="libgazebo_motor_model.so">
+      <!-- <plugin name="${robot_namespace}_${suffix}_motor_model" filename="libgazebo_motor_model.so"> -->
+      <plugin name="${robot_namespace}_motor_model" filename="libgazebo_wind3d_motor_model_plugin.so">
         <robotNamespace>${robot_namespace}</robotNamespace>
         <jointName>${robot_namespace}/rotor_${motor_number}_joint</jointName>
         <linkName>${robot_namespace}/rotor_${motor_number}</linkName>
@@ -145,6 +146,6 @@
     </gazebo>
     <gazebo reference="${robot_namespace}/rotor_${motor_number}">
       <material>Gazebo/${color}</material>
-    </gazebo>    
+    </gazebo>
   </xacro:macro>  
 </robot>

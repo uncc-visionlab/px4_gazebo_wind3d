@@ -23,8 +23,7 @@
 #include "gazebo_wind3d_world_plugin.h"
 #include "common.h"
 
-namespace gazebo
-{
+namespace gazebo {
 
     GazeboWind3DWorldPlugin::~GazeboWind3DWorldPlugin() {
         update_connection_->~Connection();
@@ -52,10 +51,47 @@ namespace gazebo
 
         // Get the wind params from SDF.
         // Check if a custom static wind field should be used.
-        getSdfParam<bool>(sdf, "useCustomStaticWindField", use_custom_static_wind_field_,
-                use_custom_static_wind_field_);
+        getSdfParam<bool>(sdf, "useCustomStaticWindField", use_custom_static_wind_field_, false);
+        getSdfParam<bool>(sdf, "useCustomDynamicWindField", use_custom_dynamic_wind_field_, false);
 
-        if (!use_custom_static_wind_field_) {
+        if (use_custom_static_wind_field_) {
+            gzdbg << "[gazebo_wind3d_world_plugin] Using custom spatially varying wind field from text file.\n";
+            // Get the wind field text file path, read it and save data.
+            std::string custom_static_wind_field_path;
+            getSdfParam<std::string>(sdf, "customStaticWindFieldPath", custom_static_wind_field_path,
+                    custom_static_wind_field_path);
+
+            ReadCustomStaticWindField(custom_static_wind_field_path);
+            //const std::vector<gazebo::physics::ModelPtr> models = world_->Models();
+            //for (auto model_ : models) {
+            //    gzdbg << "[gazebo_wind3d_world_plugin] Inspecting model: " << model_->GetName() << "." << std::endl;
+            //    link_ = model_->GetLink(link_name_);
+            //    if (link_ != NULL) {
+            //        gzdbg << "[gazebo_wind3d_world_plugin] " <<
+            //                model_->GetName() << " has link " << link_->GetName() << "." << std::endl;
+            //    } else {
+            //        gzdbg << "[gazebo_wind3d_world_plugin] Model: " << model_->GetName() <<
+            //                " does not have link " << link_name_ << "." << std::endl;
+            //        //gzthrow("[gazebo_wind_plugin] Couldn't find specified link \"" << link_name_ << "\".");
+            //    }
+            //}
+        } else if (use_custom_dynamic_wind_field_) {
+            gzdbg << "[gazebo_wind3d_world_plugin] Using custom spatially and time varying wind field from text files\n";
+            // Get the wind field text file path, read it and save data.
+            std::string custom_dyn_wind_field_xyz_path, custom_dyn_wind_field_u_path,
+                    custom_dyn_wind_field_v_path, custom_dyn_wind_field_w_path;
+            getSdfParam<std::string>(sdf, "customDynamicWindFieldPath_XYZ", custom_dyn_wind_field_xyz_path,
+                    custom_dyn_wind_field_xyz_path);
+            getSdfParam<std::string>(sdf, "customDynamicWindFieldPath_U", custom_dyn_wind_field_u_path,
+                    custom_dyn_wind_field_u_path);
+            getSdfParam<std::string>(sdf, "customDynamicWindFieldPath_V", custom_dyn_wind_field_v_path,
+                    custom_dyn_wind_field_v_path);
+            getSdfParam<std::string>(sdf, "customDynamicWindFieldPath_W", custom_dyn_wind_field_w_path,
+                    custom_dyn_wind_field_w_path);
+
+            ReadCustomDynamicWindField(custom_dyn_wind_field_xyz_path, custom_dyn_wind_field_u_path,
+                    custom_dyn_wind_field_v_path, custom_dyn_wind_field_w_path);
+        } else {
             gzdbg << "[gazebo_wind3d_world_plugin] Using user-defined constant wind field and gusts.\n";
 
             // Get the wind params from SDF.
@@ -109,28 +145,6 @@ namespace gazebo
             wind_gust_direction_distribution_Z_.param(
                     std::normal_distribution<double>::param_type(wind_gust_direction_mean_.Z(),
                     sqrt(wind_gust_direction_variance_)));
-        } else {
-            gzdbg << "[gazebo_wind3d_world_plugin] Using custom wind field from text file.\n";
-            // Get the wind field text file path, read it and save data.
-            std::string custom_wind_field_path;
-            //getSdfParam<std::string>(sdf, "linkName", link_name_, link_name_);
-            getSdfParam<std::string>(sdf, "customWindFieldPath", custom_wind_field_path,
-                    custom_wind_field_path);
-
-            ReadCustomWindField(custom_wind_field_path);
-            //const std::vector<gazebo::physics::ModelPtr> models = world_->Models();
-            //for (auto model_ : models) {
-            //    gzdbg << "[gazebo_wind3d_world_plugin] Inspecting model: " << model_->GetName() << "." << std::endl;
-            //    link_ = model_->GetLink(link_name_);
-            //    if (link_ != NULL) {
-            //        gzdbg << "[gazebo_wind3d_world_plugin] " <<
-            //                model_->GetName() << " has link " << link_->GetName() << "." << std::endl;
-            //    } else {
-            //        gzdbg << "[gazebo_wind3d_world_plugin] Model: " << model_->GetName() <<
-            //                " does not have link " << link_name_ << "." << std::endl;
-            //        //gzthrow("[gazebo_wind_plugin] Couldn't find specified link \"" << link_name_ << "\".");
-            //    }
-            //}
         }
 
         // Listen to the update event. This event is broadcast every
@@ -171,8 +185,7 @@ namespace gazebo
         //}
         currentModelPtr = world_->ModelByName(model_name);
         if (currentModelPtr == NULL) {
-            gzdbg << "[gazebo_wind3d_world_plugin] Model: " << currentModelPtr->GetName() <<
-                    "does not exist ." << std::endl;
+            gzdbg << "[gazebo_wind3d_world_plugin] Model: " << model_name << "does not exist ." << std::endl;
             return;
         }
         currentModelLinkPtr = currentModelPtr->GetLink(link_name);
@@ -364,127 +377,155 @@ namespace gazebo
         //                                                 true);
     }
 
-    void GazeboWind3DWorldPlugin::ReadCustomWindField(std::string & custom_wind_field_path) {
-        std::ifstream fin;
-        fin.open(custom_wind_field_path);
-        if (fin.is_open()) {
-            bool readCSV = true;
-            if (readCSV) {
-                // Create a vector to store the data
-                std::vector<std::vector<double>> data;
-
-                // Read the data from the file
-                std::string line;
-                double dvalue;
-                int linenum = 0;
-                while (getline(fin, line)) {
-                    linenum++;
-                    //std::cout << "read line[" << linenum << "]: " << line << std::endl;
-                    std::vector<double> row;
-                    std::string value;
-                    std::stringstream ss(line);
-                    bool lineOK = true;
-
-                    //std::cout << "line[" << linenum << "] = {";
-                    while (getline(ss, value, ',')) {
-                        double dvalue;
-                        try{
-                            dvalue = std::stod(value);}
-
-                        catch(...) {
-                            gzdbg << "[gazebo_wind3d_world_plugin] Could not convert string to double, skipping value on line " << linenum
-                                    << std::endl;
-                            gzdbg << "[gazebo_wind3d_world_plugin] line[" << linenum << "]=" << line << std::endl;
-                            lineOK = false;
-                            break;
-                        }
-                        row.push_back(dvalue);
-                        //std::cout << dvalue << ", ";
-                    }
-                    //std::cout << std::endl;
-                    if (lineOK) {
-                        //std::cout << "(X,Y,Z), (U,V,W) = " <<
-                        //          "(" << row[0] << ", " << row[1] << ", " << row[2] << "), " <<
-                        //          "(" << row[3] << ", " << row[4] << ", " << row[5] << ")" << std::endl;
-                        data.push_back(row);
-                    }
-                }
-
-                // Generating point cloud of wind field vector measurements
-                pt_cloud_vec3.pts.resize(data.size());
-                pt_cloud_vec3._data.resize(data.size());
-                float pt_avg[3]{0.f, 0.f, 0.f};
-                for (int i = 0; i < data.size(); i++) {
-                    pt_cloud_vec3.pts[i].x = data[i][0];
-                    pt_cloud_vec3.pts[i].y = data[i][1];
-                    pt_cloud_vec3.pts[i].z = data[i][2];
-                    for (int j = 0; j < 3; j++)
-                        pt_avg[j] += data[i][j] / data.size();
-                    pt_cloud_vec3._data[i][0] = data[i][3];
-                    pt_cloud_vec3._data[i][1] = data[i][4];
-                    pt_cloud_vec3._data[i][2] = data[i][5];
-                    // Print the data
-                    //std::cout << "(X,Y,Z), (U,V,W) = (" << pt_cloud_vec3.pts[i].x << ", " <<
-                    //        pt_cloud_vec3.pts[i].y << ", " << pt_cloud_vec3.pts[i].z << "), " <<
-                    //        "(" << pt_cloud_vec3._data[0][0] << ", " << pt_cloud_vec3._data[0][1] << ", " <<
-                    //        pt_cloud_vec3._data[0][3] << ")" << std::endl;
-                }
-                gzdbg << "[gazebo_wind3d_world_plugin] Average sample position is (x,y,z)=(" <<
-                        pt_avg[0] << ", " << pt_avg[1] << pt_avg[2] << ")." << std::endl;
-                //dump_mem_usage();
-                windfield_kdtree = new my_kd_tree_t(3, pt_cloud_vec3,{2 /* max elements in a leaf */});
-                const num_t query_pt[3] = {pt_avg[0], pt_avg[1], pt_avg[2]};
-                // ----------------------------------------------------------------
-                // knnSearch():  Perform a search for the N closest points
-                // ----------------------------------------------------------------
-                {
-                    size_t num_results = 5;
-                    std::vector<uint32_t> ret_index(num_results);
-                    std::vector<num_t> out_dist_sqr(num_results);
-
-                    num_results = windfield_kdtree->knnSearch(&query_pt[0], num_results, &ret_index[0],
-                            &out_dist_sqr[0]);
-
-                    // In case of less points in the tree than requested:
-                    ret_index.resize(num_results);
-                    out_dist_sqr.resize(num_results);
-
-                    gzdbg << "[gazebo_wind3d_world_plugin] knnSearch(): @ average position with num_results=" << num_results << std::endl;
-                    for (size_t i = 0; i < num_results; i++)
-                        gzdbg << "[gazebo_wind3d_world_plugin] idx[" << i << "]=" << ret_index[i] <<
-                            " (X,Y,Z) = (" << pt_cloud_vec3.pts[ret_index[i]].x << ", " <<
-                            pt_cloud_vec3.pts[ret_index[i]].y << ", " <<
-                            pt_cloud_vec3.pts[ret_index[i]].z << ") " << " dist[" << i
-                            << "]=" << out_dist_sqr[i] << std::endl;
-                }
-
-                // ----------------------------------------------------------------
-                // radiusSearch(): Perform a search for the points within search_radius
-                // ----------------------------------------------------------------
-                //                {
-                //                    const num_t search_radius = static_cast<num_t>(3);
-                //                    std::vector<nanoflann::ResultItem<uint32_t, num_t>> ret_matches;
-                //
-                //                    nanoflann::SearchParameters params;
-                //                    params.sorted = false;
-                //
-                //                    const size_t nMatches = index.radiusSearch(&query_pt[0], search_radius, ret_matches, params);
-                //                    std::cout << "radiusSearch(): radius=" << search_radius << " -> " << nMatches
-                //                              << " matches" << std::endl;
-                //                    for (size_t i = 0; i < nMatches; i++)
-                //                        std::cout << "idx[" << i << "]=" << ret_matches[i].first <<
-                //                                  " (X,Y,Z) = (" << pt_cloud_vec3.pts[ret_matches[i].first].x << ", " <<
-                //                                  pt_cloud_vec3.pts[ret_matches[i].first].y << ", " <<
-                //                                  pt_cloud_vec3.pts[ret_matches[i].first].z << ") " << " dist[" << i
-                //                                  << "]=" << ret_matches[i].second << std::endl;
-                //                    std::cout << std::endl;
-                //                }
-            }
-            fin.close();
-            gzdbg << "[gazebo_wind3d_world_plugin] Successfully read custom wind field from text file.\n";
-        } else {
-            gzerr << "[gazebo_wind3d_world_plugin] Could not open custom wind field text file.\n";
+    void GazeboWind3DWorldPlugin::ReadCustomStaticWindField(std::string & custom_wind_field_xyz_uvw_path) {
+        // Create a vector to store the data
+        std::vector<std::vector<double>> data;
+        bool csvReadOK = readCSV(custom_wind_field_xyz_uvw_path, data);
+        if (!csvReadOK) {
+            gzerr << __FUNCTION__ << "[gazebo_wind3d_world_plugin] Could not open custom wind field CSV file." << std::endl;
+            return;
         }
+        int num_points = data.size();
+        pt_cloud_vec3.pts.resize(num_points);
+        pt_cloud_vec3._data.resize(num_points);
+        int index = 0;
+        float pt_avg[3]{0.f, 0.f, 0.f};
+        gzdbg << __FUNCTION__ << " " << num_points << " rows loaded from custom XYZ varying wind CSV data file." << std::endl;
+        for (std::vector<double> row : data) {
+            // Generating point cloud of wind field vector measurements            
+            pt_cloud_vec3.pts[index].x = row[0];
+            pt_cloud_vec3.pts[index].y = row[1];
+            pt_cloud_vec3.pts[index].z = row[2];
+            for (int j = 0; j < 3; j++)
+                pt_avg[j] += row[j] / num_points;
+            pt_cloud_vec3._data[index][0] = row[3];
+            pt_cloud_vec3._data[index][1] = row[4];
+            pt_cloud_vec3._data[index][2] = row[5];
+            // Print the data
+            //std::cout << "(X,Y,Z), (U,V,W) = (" << pt_cloud_vec3.pts[i].x << ", " <<
+            //        pt_cloud_vec3.pts[i].y << ", " << pt_cloud_vec3.pts[i].z << "), " <<
+            //        "(" << pt_cloud_vec3._data[0][0] << ", " << pt_cloud_vec3._data[0][1] << ", " <<
+            //        pt_cloud_vec3._data[0][3] << ")" << std::endl;
+            index++;
+        }
+        gzdbg << "[gazebo_wind3d_world_plugin] Average sample position is (x,y,z)=(" <<
+                pt_avg[0] << ", " << pt_avg[1] << pt_avg[2] << ")." << std::endl;
+        //dump_mem_usage();
+        windfield_kdtree = new static_kd_tree_t(3, pt_cloud_vec3,{2 /* max elements in a leaf */});
+        const num_t query_pt[3] = {pt_avg[0], pt_avg[1], pt_avg[2]};
+        // ----------------------------------------------------------------
+        // knnSearch():  Perform a search for the N closest points
+        // ----------------------------------------------------------------
+        {
+            size_t num_results = 5;
+            std::vector<uint32_t> ret_index(num_results);
+            std::vector<num_t> out_dist_sqr(num_results);
+
+            num_results = windfield_kdtree->knnSearch(&query_pt[0], num_results, &ret_index[0],
+                    &out_dist_sqr[0]);
+
+            // In case of less points in the tree than requested:
+            ret_index.resize(num_results);
+            out_dist_sqr.resize(num_results);
+
+            gzdbg << "[gazebo_wind3d_world_plugin] knnSearch(): @ average position with num_results=" << num_results << std::endl;
+            for (size_t i = 0; i < num_results; i++)
+                gzdbg << "[gazebo_wind3d_world_plugin] idx[" << i << "]=" << ret_index[i] <<
+                    " (X,Y,Z) = (" << pt_cloud_vec3.pts[ret_index[i]].x << ", " <<
+                    pt_cloud_vec3.pts[ret_index[i]].y << ", " <<
+                    pt_cloud_vec3.pts[ret_index[i]].z << ") " << " dist[" << i
+                    << "]=" << out_dist_sqr[i] << std::endl;
+        }
+
+        // ----------------------------------------------------------------
+        // radiusSearch(): Perform a search for the points within search_radius
+        // ----------------------------------------------------------------
+        //                {
+        //                    const num_t search_radius = static_cast<num_t>(3);
+        //                    std::vector<nanoflann::ResultItem<uint32_t, num_t>> ret_matches;
+        //
+        //                    nanoflann::SearchParameters params;
+        //                    params.sorted = false;
+        //
+        //                    const size_t nMatches = index.radiusSearch(&query_pt[0], search_radius, ret_matches, params);
+        //                    std::cout << "radiusSearch(): radius=" << search_radius << " -> " << nMatches
+        //                              << " matches" << std::endl;
+        //                    for (size_t i = 0; i < nMatches; i++)
+        //                        std::cout << "idx[" << i << "]=" << ret_matches[i].first <<
+        //                                  " (X,Y,Z) = (" << pt_cloud_vec3.pts[ret_matches[i].first].x << ", " <<
+        //                                  pt_cloud_vec3.pts[ret_matches[i].first].y << ", " <<
+        //                                  pt_cloud_vec3.pts[ret_matches[i].first].z << ") " << " dist[" << i
+        //                                  << "]=" << ret_matches[i].second << std::endl;
+        //                    std::cout << std::endl;
+        //                }
+        gzdbg << "[gazebo_wind3d_world_plugin] Successfully read custom spatially varying wind field from text file.\n";
+    }
+
+    void GazeboWind3DWorldPlugin::ReadCustomDynamicWindField(std::string & xyz_field_datafile_path,
+            std::string & fft_u_of_t_datafile_path, std::string & fft_v_of_t_datafile_path,
+            std::string & fft_w_of_t_datafile_path) {
+        std::vector<std::vector<double>> xyz_data;
+        std::vector<std::vector<double>> u_data;
+        std::vector<std::vector<double>> v_data;
+        std::vector<std::vector<double>> w_data;
+        std::string files[4] = {xyz_field_datafile_path,
+            fft_u_of_t_datafile_path, fft_v_of_t_datafile_path,
+            fft_w_of_t_datafile_path};
+        std::vector<std::vector<double>> data_vectors[4] = {xyz_data,
+            u_data, v_data, w_data};
+        bool csvReadOK;
+        int index = 0;
+        int num_points = 0;
+        for (std::string file : files) {
+            csvReadOK = readCSV(file, data_vectors[index]);
+            num_points = data_vectors[index].size();
+            gzdbg << __FUNCTION__ << " " << num_points << " rows loaded from custom space and time varying wind CSV data files." << std::endl;
+            if (!csvReadOK) {
+                gzerr << __FUNCTION__ << "[gazebo_wind3d_world_plugin] Could not open custom wind field text file" << std::endl;
+                return;
+            }
+            index++;
+        }
+        num_points = xyz_data.size();
+        int num_coeffs = u_data.size() - 1;
+        pt_cloud_fftfunc.pts.resize(num_points);
+        pt_cloud_fftfunc._freq.resize(num_points);
+        pt_cloud_fftfunc._real.resize(num_points);
+        pt_cloud_fftfunc._imag.resize(num_points);
+        float pt_avg[3]{0.f, 0.f, 0.f};
+        index = 0;
+        for (std::vector<double> row : xyz_data) {
+            // Generating point cloud of wind field vector measurements            
+            pt_cloud_fftfunc.pts[index].x = row[0];
+            pt_cloud_fftfunc.pts[index].y = row[1];
+            pt_cloud_fftfunc.pts[index].z = row[2];
+            for (int j = 0; j < 3; j++)
+                pt_avg[j] += row[j] / num_points;
+//            for (int j = 0; j < num_coeffs; j++) {
+//                pt_cloud_fftfunc._freq[index][0] = u_data[0];
+//                pt_cloud_fftfunc._real[index][0] = u_data[1];
+//                pt_cloud_fftfunc._imag[index][0] = u_data[2];
+//                pt_cloud_fftfunc._freq[index][1] = v_data[0];
+//                pt_cloud_fftfunc._real[index][1] = v_data[1];
+//                pt_cloud_fftfunc._imag[index][1] = v_data[2];
+//                pt_cloud_fftfunc._freq[index][2] = w_data[0];
+//                pt_cloud_fftfunc._real[index][2] = w_data[1];
+//                pt_cloud_fftfunc._imag[index][2] = w_data[2];
+//            }
+            // Print the data
+            //std::cout << "(X,Y,Z), (U,V,W) = (" << pt_cloud_vec3.pts[i].x << ", " <<
+            //        pt_cloud_vec3.pts[i].y << ", " << pt_cloud_vec3.pts[i].z << "), " <<
+            //        "(" << pt_cloud_vec3._data[0][0] << ", " << pt_cloud_vec3._data[0][1] << ", " <<
+            //        pt_cloud_vec3._data[0][3] << ")" << std::endl;
+            index++;
+        }
+        gzdbg << "[gazebo_wind3d_world_plugin] Average sample position is (x,y,z)=(" <<
+                pt_avg[0] << ", " << pt_avg[1] << pt_avg[2] << ")." << std::endl;
+        //dump_mem_usage();
+        windfield_fft_kdtree = new fftfunc_kd_tree_t(3, pt_cloud_fftfunc,{2 /* max elements in a leaf */});
+
+        // Create a vector to store the data
+        gzdbg << "[gazebo_wind3d_world_plugin] Successfully read custom spatially and temporally varying wind field from text file.\n";
     }
 
     GZ_REGISTER_WORLD_PLUGIN(GazeboWind3DWorldPlugin);

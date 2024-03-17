@@ -80,5 +80,5 @@ YOU WILL NEED TO SET THE PATH TO YOUR CUSTOM 3D WIND FILE IN THE WORLD FILE BY E
 <windVelocityVariance>0</windVelocityVariance>
 <windPubTopic>world_wind</windPubTopic>
 <useCustomStaticWindField>true</useCustomStaticWindField>
-<customWindFieldPath>/home2/arwillis/asr_project/third_party/px4_gazebo_wind3d/datasets/openfoam_dataset_0.csv</customWindFieldPath>
+<customStaticWindFieldPath>/home2/arwillis/asr_project/third_party/px4_gazebo_wind3d/datasets/openfoam_dataset_0.csv</customStaticWindFieldPath>
 ```

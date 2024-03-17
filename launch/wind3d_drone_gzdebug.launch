@@ -18,6 +18,7 @@
     -->
     <!--
         export GAZEBO_PLUGIN_PATH=/home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/lib:${GAZEBO_PLUGIN_PATH}
+        export GAZEBO_MODEL_PATH=/home2/arwillis/uncc_wind_control/third_party/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models/:/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/models:$GAZEBO_MODEL_PATH
         export LD_LIBRARY_PATH=/home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/lib:${LD_LIBRARY_PATH}
     -->
 
@@ -37,7 +38,8 @@
     <arg name="world_A" default="$(find mavlink_sitl_gazebo)/worlds/empty.world"/>
     <arg name="world_B" default="$(find px4_gazebo_wind3d)/worlds/windy_static.world"/>
     <arg name="world_C" default="$(find px4_gazebo_wind3d)/worlds/windy_custom.world"/>
-    <arg name="world" default="$(arg world_C)"/>
+    <arg name="world_D" default="$(find px4_gazebo_wind3d)/worlds/windy_uncc_engcampus.world"/>
+    <arg name="world" default="$(arg world_D)"/>
     <!--
     <arg name="sdf" default="$(find mavlink_sitl_gazebo)/models/$(arg vehicle)/$(arg vehicle).sdf"/>
     -->

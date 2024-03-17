@@ -144,7 +144,57 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
   
-  <gazebo>
+    <gazebo>      
+      <link name='/vis_body'>
+        <inertial>
+          <mass>1e-9</mass>
+          <inertia>
+            <ixx>1e-9</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1e-9</iyy>
+            <iyz>0</iyz>
+            <izz>1e-9</izz>
+          </inertia>
+          <pose>0 0 0.0 0 -0 0</pose>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <sphere>
+              <radius>0.001</radius>
+            </sphere>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <plugin name="sphere_wind3d_visual" filename="libgazebo_wind3d_visual_plugin.so"/>
+          <geometry>
+            <sphere>
+              <radius>0.001</radius>
+            </sphere>
+          </geometry>
+        </visual>
+      </link>
+    <joint name='/vis/base_joint' type='revolute'>
+      <child>/vis_body</child>
+      <parent>/base_link</parent>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>0</lower>
+          <upper>0</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint> 
+  </gazebo>
+
+  <gazebo>      
       <link name='/imu_link'>
       <pose>0 0 0.02 0 0 0</pose>
       <inertial>
@@ -177,7 +227,7 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
-    </joint>    
+    </joint>        
     <include>
       <uri>model://gps</uri>
       <pose>0.05 0 0.04 0 0 0</pose>
@@ -186,7 +236,7 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
     <joint name='gps0_joint' type='fixed'>
       <child>gps0::link</child>
       <parent>/base_link</parent>
-    </joint>        
+    </joint>
     <plugin name='groundtruth_plugin' filename='libgazebo_groundtruth_plugin.so'>
       <robotNamespace/>
     </plugin> 
@@ -202,7 +252,7 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
       <windPubTopic>world_wind</windPubTopic>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
       <windServerLinkTopic>/gazebo/default/anemometer_wind</windServerLinkTopic>
-    </plugin>      
+    </plugin>
     <plugin name='gazebo_dynamic_wind_plugin' filename='libgazebo_dynamic_wind_plugin.so'>
       <robotNamespace></robotNamespace>
       <frameId>world</frameId>

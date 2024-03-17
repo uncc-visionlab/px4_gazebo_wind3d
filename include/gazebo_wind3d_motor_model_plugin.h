@@ -29,6 +29,7 @@
 #include <gazebo/common/Plugin.hh>
 #include <rotors_model/motor_model.hpp>
 #include "CommandMotorSpeed.pb.h"
+#include "gazebo/rendering/ArrowVisual.hh"
 #include "gazebo/transport/transport.hh"
 #include "gazebo/msgs/msgs.hh"
 #include "MotorSpeed.pb.h"

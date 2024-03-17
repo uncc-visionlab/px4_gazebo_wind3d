@@ -92,13 +92,13 @@ namespace gazebo {
         wind_gust_direction_variance_(kDefaultWindGustDirectionVariance),
         pub_interval_(0.5),
         node_handle_(NULL) {
-            
+
         }
 
         virtual ~GazeboWind3DWorldPlugin();
-        
+
         void RegisterLinkCallback(WindServerRegistrationPtr msg);
-        
+
     protected:
         /// \brief Load the plugin.
         /// \param[in] _model Pointer to the model that loaded this plugin.
@@ -120,12 +120,59 @@ namespace gazebo {
         ///           has loaded and listening to ConnectGazeboToRosTopic and ConnectRosToGazeboTopic messages).
         void CreatePubsAndSubs();
 
+        template <typename T>
+        bool readCSV(std::string datafile_path, std::vector<std::vector<T>> &data) {
+            std::ifstream fin;
+            fin.open(datafile_path);
+            if (!fin.is_open()) {
+                gzerr << __FUNCTION__ << "Error reading file " << datafile_path << std::endl;                
+                return false;
+            }
+            // Read the data from the file
+            std::string line;
+            double dvalue;
+            int linenum = 0;
+            while (getline(fin, line)) {
+                linenum++;
+                //std::cout << "read line[" << linenum << "]: " << line << std::endl;
+                std::vector<double> row;
+                std::string value;
+                std::stringstream ss(line);
+                bool lineOK = true;
+
+                //std::cout << "line[" << linenum << "] = {";
+                while (getline(ss, value, ',')) {
+                    double dvalue;
+                    try {
+                        dvalue = std::stod(value);
+                    } catch (...) {
+//                        gzdbg << "[gazebo_wind3d_world_plugin] Could not convert string to double, skipping value on line " << linenum
+//                                << std::endl;
+//                        gzdbg << "[gazebo_wind3d_world_plugin] line[" << linenum << "]=" << line << std::endl;
+                        lineOK = false;
+                        break;
+                    }
+                    row.push_back(dvalue);
+                    //std::cout << dvalue << ", ";
+                }
+                //std::cout << std::endl;
+                if (lineOK) {
+                    //std::cout << "(X,Y,Z), (U,V,W) = " <<
+                    //          "(" << row[0] << ", " << row[1] << ", " << row[2] << "), " <<
+                    //          "(" << row[3] << ", " << row[4] << ", " << row[5] << ")" << std::endl;
+                    data.push_back(row);
+                }
+            }
+            fin.close();
+            return true;
+        }
+
         /// \brief Pointer to the update event connection.
         event::ConnectionPtr update_connection_;
 
         physics::WorldPtr world_;
 
-//        std::string namespace_;
+        //        std::string namespace_;
 
         std::string frame_id_;
         std::string wind_server_reglink_topic_;
@@ -162,19 +209,33 @@ namespace gazebo {
 
         /// \brief    Variables for custom wind field generation.
         bool use_custom_static_wind_field_;
-//        std::string link_name_;
-//        std::vector<physics::ModelPtr> model_;
-//        physics::LinkPtr link_;
-        using my_kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
+        bool use_custom_dynamic_wind_field_;
+        //        std::string link_name_;
+        //        std::vector<physics::ModelPtr> model_;
+        //        physics::LinkPtr link_;
+        using static_kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
                 nanoflann::L2_Simple_Adaptor<num_t, SampledVectorField<num_t, 3 >>,
                 SampledVectorField<num_t, 3>, 3 /* dim */>;
         SampledVectorField<num_t, 3> pt_cloud_vec3;
-        my_kd_tree_t *windfield_kdtree;
+        
+        using fftfunc_kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
+                nanoflann::L2_Simple_Adaptor<num_t, SampledFourierRealFunctionField<num_t, 3, 10>>,
+                SampledFourierRealFunctionField<num_t, 3, 10>, 3 /* dim */>;
+        SampledFourierRealFunctionField<num_t, 3, 10> pt_cloud_fftfunc;
+        
+        
+        static_kd_tree_t *windfield_kdtree;
+        fftfunc_kd_tree_t *windfield_fft_kdtree;
+
 
         /// \brief  Reads wind data from a text file and saves it.
         /// \param[in] custom_wind_field_path Path to the wind field from ~/.ros.
-        void ReadCustomWindField(std::string &custom_wind_field_path);
-      
+        void ReadCustomStaticWindField(std::string &custom_wind_field_path);
+
+        void ReadCustomDynamicWindField(std::string & xyz_field_datafile_path,
+                std::string & fft_u_of_t_datafile_path, std::string & fft_v_of_t_datafile_path,
+                std::string & fft_w_of_t_datafile_path);
+
         gazebo::transport::SubscriberPtr wind_register_sub_;
 
         std::vector<std::string> registered_link_name_list_;
@@ -183,7 +244,7 @@ namespace gazebo {
         std::vector<std::string> registered_namespace_list_;
         std::vector<std::string> registered_wind_server_link_wind_topic_list_;
         std::vector<transport::PublisherPtr> registered_link_wind_publisher_list_;
-        
+
         transport::NodePtr node_handle_;
         transport::PublisherPtr wind_pub_;
 

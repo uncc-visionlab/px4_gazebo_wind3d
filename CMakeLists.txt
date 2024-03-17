@@ -53,6 +53,7 @@ pkg_search_module(GLIB REQUIRED glib-2.0)
 if (NOT NO_ROS)
   find_package(catkin REQUIRED COMPONENTS
     gazebo_plugins
+    gazebo_msgs
     geometry_msgs
 #    mav_msgs
     message_generation
@@ -307,6 +308,8 @@ add_library(wind3d_msgs SHARED ${WIND3D_PROTO_SRCS})
 link_libraries(mav_msgs physics_msgs sensor_msgs wind3d_msgs)
 
 add_library(gazebo_wind3d_world_plugin SHARED src/gazebo_wind3d_world_plugin.cpp)
+
+add_library(gazebo_wind3d_visual_plugin SHARED src/gazebo_wind3d_visual_plugin.cpp)
 
 add_library(gazebo_dynamic_wind_plugin SHARED src/gazebo_dynamic_wind_plugin.cpp)
 add_library(gazebo_anemometer_plugin SHARED src/gazebo_anemometer_plugin.cpp)
