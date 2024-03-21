@@ -24,7 +24,7 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
       <uri>model://uncc_engcampus</uri>
       <pose>0 0 0 0 0 0</pose>
     </include>
-    <!-- -->
+    <!--
     <plugin name='wind3d_plugin' filename='libgazebo_wind3d_world_plugin.so'>
       <frameId>base_link</frameId>
       <linkName>base_link</linkName>
@@ -35,22 +35,19 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
       <windPubTopic>world_wind</windPubTopic>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
     </plugin>
+    -->
     <!-- -->
-    <!-- 
     <plugin name='wind3d_plugin' filename='libgazebo_wind3d_world_plugin.so'>
       <frameId>base_link</frameId>
       <linkName>base_link</linkName>
       <publishRate>2.0</publishRate>
       <robotNamespace/>
       <useCustomDynamicWindField>true</useCustomDynamicWindField>
-      <customDynamicWindFieldPath_XYZ>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/points_xyz.csv</customDynamicWindFieldPath_XYZ>
-      <customDynamicWindFieldPath_U>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/FFT_U_velocity.csv</customDynamicWindFieldPath_U>
-      <customDynamicWindFieldPath_V>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/FFT_V_velocity.csv</customDynamicWindFieldPath_V>
-      <customDynamicWindFieldPath_W>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/FFT_W_velocity.csv</customDynamicWindFieldPath_W>
+      <customDynamicWindFieldPath>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/all_FFT_data.csv</customDynamicWindFieldPath>
       <windPubTopic>world_wind</windPubTopic>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
     </plugin>
-    -->
+    <!-- -->
    <plugin name="ros_interface_plugin" filename="libgazebo_ros_interface_plugin.so">
      <robotNamespace></robotNamespace>
    </plugin> 

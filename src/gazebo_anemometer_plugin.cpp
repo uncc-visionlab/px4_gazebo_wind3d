@@ -24,6 +24,7 @@
 namespace gazebo {
 
     GazeboAnemometerPlugin::~GazeboAnemometerPlugin() {
+        updateConnection_->~Connection();
     }
 
     void GazeboAnemometerPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {

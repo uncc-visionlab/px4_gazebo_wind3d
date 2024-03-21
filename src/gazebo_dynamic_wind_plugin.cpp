@@ -31,7 +31,6 @@
 namespace gazebo {
 
     GazeboDynamicWindPlugin::~GazeboDynamicWindPlugin() {
-
     }
 
     void GazeboDynamicWindPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
@@ -112,9 +111,9 @@ namespace gazebo {
         ignition::math::Vector3d body_velocity = ignitionFromGazeboMath(link_->GetWorldLinearVel());
 #endif
         ignition::math::Vector3d wind_vel_ = wind_speed_W_;
-        ignition::math::Vector3d relative_wind_velocity = body_velocity - wind_vel_;        
+        ignition::math::Vector3d relative_wind_velocity = body_velocity - wind_vel_;
         //link_->AddRelativeForce(0.1*relative_wind_velocity);
-        link_->AddForce(0.1*relative_wind_velocity);
+        link_->AddForce(0.1 * relative_wind_velocity);
         //link_->AddForceAtRelativePosition(wind, xyz_offset_);
         //wrench_stamped_msg_.mutable_header()->set_frame_id(frame_id_);
         //wrench_stamped_msg_.mutable_header()->mutable_stamp()->set_sec(now.sec);

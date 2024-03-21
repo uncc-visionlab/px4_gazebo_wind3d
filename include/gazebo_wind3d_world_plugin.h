@@ -232,9 +232,7 @@ namespace gazebo {
         /// \param[in] custom_wind_field_path Path to the wind field from ~/.ros.
         void ReadCustomStaticWindField(std::string &custom_wind_field_path);
 
-        void ReadCustomDynamicWindField(std::string & xyz_field_datafile_path,
-                std::string & fft_u_of_t_datafile_path, std::string & fft_v_of_t_datafile_path,
-                std::string & fft_w_of_t_datafile_path);
+        void ReadCustomDynamicWindField(std::string & wind_field_datafile_path);
 
         gazebo::transport::SubscriberPtr wind_register_sub_;
 

@@ -239,9 +239,9 @@ struct SampledVectorField : public PointCloud<T> {
 
 template<typename T, unsigned dimension, unsigned NUM_COEFFS>
 struct SampledFourierRealFunctionField : public PointCloud<T> {
-    std::vector<Vector<NUM_COEFFS, T>> _freq;
-    std::vector<Vector<NUM_COEFFS, T>> _real;
-    std::vector<Vector<NUM_COEFFS, T>> _imag;
+    std::vector<Vector<dimension, T>> _freq;
+    std::vector<Vector<dimension, T>> _real;
+    std::vector<Vector<dimension, T>> _imag;
 
     // Must return the number of data points
     inline size_t kdtree_get_point_count() const { return this->pts.size(); }
