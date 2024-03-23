@@ -32,21 +32,26 @@
 
 template<typename T>
 struct PointCloud {
+
     struct Point {
         T x, y, z;
     };
 
-    using coord_t = T;  //!< The type of each coordinate
+    using coord_t = T; //!< The type of each coordinate
 
     std::vector<Point> pts;
 
     // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return pts.size(); }
+
+    inline size_t kdtree_get_point_count() const {
+        return pts.size();
+    }
 
     // Returns the dim'th component of the idx'th point in the class:
     // Since this is inlined and the "dim" argument is typically an immediate
     // value, the
     //  "if/else's" are actually solved at compile time.
+
     inline T kdtree_get_pt(const size_t idx, const size_t dim) const {
         if (dim == 0)
             return pts[idx].x;
@@ -61,6 +66,7 @@ struct PointCloud {
     //   Return true if the BBOX was already computed by the class and returned
     //   in "bb" so it can be avoided to redo it again. Look at bb.size() to
     //   find out the expected dimensionality (e.g. 2 or 3 for point clouds)
+
     template<class BBOX>
     bool kdtree_get_bbox(BBOX & /* bb */) const {
         return false;
@@ -87,8 +93,10 @@ void generateRandomPointCloud(
 }
 
 // This is an exampleof a custom data set class
+
 template<typename T>
 struct PointCloud_Quat {
+
     struct Point {
         T w, x, y, z;
     };
@@ -96,12 +104,16 @@ struct PointCloud_Quat {
     std::vector<Point> pts;
 
     // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return pts.size(); }
+
+    inline size_t kdtree_get_point_count() const {
+        return pts.size();
+    }
 
     // Returns the dim'th component of the idx'th point in the class:
     // Since this is inlined and the "dim" argument is typically an immediate
     // value, the
     //  "if/else's" are actually solved at compile time.
+
     inline T kdtree_get_pt(const size_t idx, const size_t dim) const {
         if (dim == 0)
             return pts[idx].w;
@@ -118,6 +130,7 @@ struct PointCloud_Quat {
     //   Return true if the BBOX was already computed by the class and returned
     //   in "bb" so it can be avoided to redo it again. Look at bb.size() to
     //   find out the expected dimensionality (e.g. 2 or 3 for point clouds)
+
     template<class BBOX>
     bool kdtree_get_bbox(BBOX & /* bb */) const {
         return false;
@@ -130,12 +143,12 @@ void generateRandomPointCloud_Quat(PointCloud_Quat<T> &point, const size_t N) {
     point.pts.resize(N);
     T theta, X, Y, Z, sinAng, cosAng, mag;
     for (size_t i = 0; i < N; i++) {
-        theta = static_cast<T>(
+        theta = static_cast<T> (
                 nanoflann::pi_const<double>() * (((double) rand()) / RAND_MAX));
         // Generate random value in [-1, 1]
-        X = static_cast<T>(2 * (((double) rand()) / RAND_MAX) - 1);
-        Y = static_cast<T>(2 * (((double) rand()) / RAND_MAX) - 1);
-        Z = static_cast<T>(2 * (((double) rand()) / RAND_MAX) - 1);
+        X = static_cast<T> (2 * (((double) rand()) / RAND_MAX) - 1);
+        Y = static_cast<T> (2 * (((double) rand()) / RAND_MAX) - 1);
+        Z = static_cast<T> (2 * (((double) rand()) / RAND_MAX) - 1);
         mag = sqrt(X * X + Y * Y + Z * Z);
         X /= mag;
         Y /= mag;
@@ -150,8 +163,10 @@ void generateRandomPointCloud_Quat(PointCloud_Quat<T> &point, const size_t N) {
 }
 
 // This is an exampleof a custom data set class
+
 template<typename T>
 struct PointCloud_Orient {
+
     struct Point {
         T theta;
     };
@@ -159,12 +174,16 @@ struct PointCloud_Orient {
     std::vector<Point> pts;
 
     // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return pts.size(); }
+
+    inline size_t kdtree_get_point_count() const {
+        return pts.size();
+    }
 
     // Returns the dim'th component of the idx'th point in the class:
     // Since this is inlined and the "dim" argument is typically an immediate
     // value, the
     //  "if/else's" are actually solved at compile time.
+
     inline T kdtree_get_pt(const size_t idx, const size_t dim = 0) const {
         return pts[idx].theta;
     }
@@ -174,6 +193,7 @@ struct PointCloud_Orient {
     //   Return true if the BBOX was already computed by the class and returned
     //   in "bb" so it can be avoided to redo it again. Look at bb.size() to
     //   find out the expected dimensionality (e.g. 2 or 3 for point clouds)
+
     template<class BBOX>
     bool kdtree_get_bbox(BBOX & /* bb */) const {
         return false;
@@ -186,9 +206,9 @@ void generateRandomPointCloud_Orient(
     // Generating Random Orientations
     point.pts.resize(N);
     for (size_t i = 0; i < N; i++) {
-        point.pts[i].theta = static_cast<T>(
+        point.pts[i].theta = static_cast<T> (
                 (2 * nanoflann::pi_const<double>() *
-                 (((double) rand()) / RAND_MAX)) -
+                (((double) rand()) / RAND_MAX)) -
                 nanoflann::pi_const<double>());
     }
 }
@@ -211,12 +231,16 @@ struct SampledVectorField : public PointCloud<T> {
     std::vector<Vector<dimension, T>> _data;
 
     // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return this->pts.size(); }
+
+    inline size_t kdtree_get_point_count() const {
+        return this->pts.size();
+    }
 
     // Returns the dim'th component of the idx'th point in the class:
     // Since this is inlined and the "dim" argument is typically an immediate
     // value, the
     //  "if/else's" are actually solved at compile time.
+
     inline T kdtree_get_pt(const size_t idx, const size_t dim) const {
         if (dim == 0)
             return this->pts[idx].x;
@@ -231,25 +255,30 @@ struct SampledVectorField : public PointCloud<T> {
     //   Return true if the BBOX was already computed by the class and returned
     //   in "bb" so it can be avoided to redo it again. Look at bb.size() to
     //   find out the expected dimensionality (e.g. 2 or 3 for point clouds)
+
     template<class BBOX>
     bool kdtree_get_bbox(BBOX & /* bb */) const {
         return false;
     }
 };
 
-template<typename T, unsigned dimension, unsigned NUM_COEFFS>
+template<typename T, unsigned dimension>
 struct SampledFourierRealFunctionField : public PointCloud<T> {
-    std::vector<Vector<dimension, T>> _freq;
-    std::vector<Vector<dimension, T>> _real;
-    std::vector<Vector<dimension, T>> _imag;
+    std::vector<std::vector<Vector<dimension, T>>> _freq;
+    std::vector<std::vector<Vector<dimension, T>>> _real;
+    std::vector<std::vector<Vector<dimension, T>>> _imag;
 
     // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return this->pts.size(); }
+
+    inline size_t kdtree_get_point_count() const {
+        return this->pts.size();
+    }
 
     // Returns the dim'th component of the idx'th point in the class:
     // Since this is inlined and the "dim" argument is typically an immediate
     // value, the
     //  "if/else's" are actually solved at compile time.
+
     inline T kdtree_get_pt(const size_t idx, const size_t dim) const {
         if (dim == 0)
             return this->pts[idx].x;
@@ -264,12 +293,12 @@ struct SampledFourierRealFunctionField : public PointCloud<T> {
     //   Return true if the BBOX was already computed by the class and returned
     //   in "bb" so it can be avoided to redo it again. Look at bb.size() to
     //   find out the expected dimensionality (e.g. 2 or 3 for point clouds)
+
     template<class BBOX>
     bool kdtree_get_bbox(BBOX & /* bb */) const {
         return false;
     }
 };
-
 
 inline void dump_mem_usage() {
     FILE *f = fopen("/proc/self/statm", "rt");

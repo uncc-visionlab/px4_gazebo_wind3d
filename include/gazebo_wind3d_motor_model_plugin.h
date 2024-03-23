@@ -38,6 +38,8 @@
 
 #include "common.h"
 
+#include "Wind.pb.h"                  // Wind message
+#include "WindServerRegistration.pb.h"
 
 namespace turning_direction {
     const static int CCW = 1;
@@ -46,6 +48,9 @@ namespace turning_direction {
 
 namespace gazebo {
     // Default values
+    static const bool kPrintOnMsgCallback = true;
+    static const std::string kDefaultWindServerRegisterTopic = "/gazebo/default/wind3d_register_link";
+    
     static const std::string kDefaultNamespace = "";
     static const std::string kDefaultCommandSubTopic = "/gazebo/command/motor_speed";
     static const std::string kDefaultMotorFailureNumSubTopic = "/gazebo/motor_failure_num";
@@ -77,7 +82,9 @@ namespace gazebo {
 
         GazeboWind3DMotorModel()
         : ModelPlugin(),
-        MotorModel() {
+        MotorModel(),
+        wind_server_reglink_topic_(kDefaultWindServerRegisterTopic),
+        pubs_and_subs_created_(false) {
         }
 
         virtual ~GazeboWind3DMotorModel();
@@ -94,6 +101,21 @@ namespace gazebo {
         virtual void OnUpdate(const common::UpdateInfo & /*_info*/);
 
     private:
+        /// \brief    Flag that is set to true once CreatePubsAndSubs() is called, used
+        ///           to prevent CreatePubsAndSubs() from be called on every OnUpdate().
+        bool pubs_and_subs_created_;
+
+        /// \brief    Creates all required publishers and subscribers, incl. routing of messages to/from ROS if required.
+        /// \details  Call this once the first time OnUpdate() is called (can't
+        ///           be called from Load() because there is no guarantee GazeboRosInterfacePlugin has
+        ///           has loaded and listening to ConnectGazeboToRosTopic and ConnectRosToGazeboTopic messages).
+        void CreatePubsAndSubs();
+        std::string wind_server_reglink_topic_;
+        std::string wind_server_link_wind_topic_;
+        gazebo::transport::PublisherPtr wind_server_register_pub_;
+        gazebo::transport::SubscriberPtr wind_server_link_wind_msg_sub_;
+        gazebo::transport::PublisherPtr pub_visual_;
+
         std::string command_sub_topic_{kDefaultCommandSubTopic};
         std::string motor_failure_sub_topic_{kDefaultMotorFailureNumSubTopic};
         std::string joint_name_;

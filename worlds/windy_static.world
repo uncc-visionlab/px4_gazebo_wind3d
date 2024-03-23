@@ -95,7 +95,7 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
       <real_time_update_rate>250</real_time_update_rate>
       <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
     </physics>
- <model name='unit_sphere'>
+    <model name='unit_sphere'>
       <pose>0.013103 0.035528 1 0 -0 0</pose>
       <link name='base_link2'>
         <inertial>

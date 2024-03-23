@@ -40,7 +40,7 @@ namespace gazebo {
     }
 
     void GazeboWind3DMotorModel::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
-        gzdbg << __FUNCTION__ << "() called." << std::endl;
+        gzdbg << __FUNCTION__ << "() called." << std::endl;   
         model_ = _model;
 
         namespace_.clear();
@@ -156,6 +156,14 @@ namespace gazebo {
 
         // Create the first order filter.
         rotor_velocity_filter_.reset(new FirstOrderFilter<double>(time_constant_up_, time_constant_down_, ref_motor_rot_vel_));
+        
+        getSdfParam<std::string>(_sdf, "windServerRegisterLinkTopic", wind_server_reglink_topic_,
+                wind_server_reglink_topic_);
+        std::stringstream default_topic;
+        default_topic << namespace_ << "/" << link_name_ << "/" << motor_number_;
+        getSdfParam<std::string>(_sdf, "windServerLinkTopic", wind_server_link_wind_topic_,
+                default_topic.str());
+            
     }
 
     // Protobuf test
@@ -173,6 +181,10 @@ namespace gazebo {
     // This gets called by the world update start event.
 
     void GazeboWind3DMotorModel::OnUpdate(const common::UpdateInfo & _info) {
+        if (!pubs_and_subs_created_) {
+            CreatePubsAndSubs();
+            pubs_and_subs_created_ = true;
+        }        
         sampling_time_ = _info.simTime.Double() - prev_sim_time_;
         prev_sim_time_ = _info.simTime.Double();
         UpdateForcesAndMoments();
@@ -295,9 +307,33 @@ namespace gazebo {
     }
 
     void GazeboWind3DMotorModel::WindVelocityCallback(WindPtr & msg) {
+        if (kPrintOnMsgCallback) {
+            gzdbg << __FUNCTION__ << "() motor " << motor_number_ << " wind speed (x,y,z)=(" <<
+                    msg->velocity().x() << ", " <<
+                    msg->velocity().y() << ", " <<
+                    msg->velocity().z() << ")" << std::endl;
+        }        
         wind_vel_ = ignition::math::Vector3d(msg->velocity().x(),
                 msg->velocity().y(),
                 msg->velocity().z());
+    }
+
+    void GazeboWind3DMotorModel::CreatePubsAndSubs() {
+        pub_visual_ = node_handle_->Advertise<gazebo::msgs::Visual>("~/visual");
+        wind_server_register_pub_ = node_handle_->Advertise<wind3d_msgs::msgs::WindServerRegistration>(
+                wind_server_reglink_topic_, 1);
+        wind_server_link_wind_msg_sub_ = node_handle_->Subscribe<physics_msgs::msgs::Wind>(wind_server_link_wind_topic_,
+                &GazeboWind3DMotorModel::WindVelocityCallback, this);
+
+        // Register this plugin with the world dynamic wind server
+        wind3d_msgs::msgs::WindServerRegistration register_msg;
+        register_msg.set_link_name(link_->GetName());
+        register_msg.set_model_name(model_->GetName());
+        register_msg.set_namespace_(namespace_);
+        register_msg.set_link_wind_topic(wind_server_link_wind_topic_);
+        gzdbg << __FUNCTION__ << "() registering robot \"" << namespace_ << "\" motor " << motor_number_ <<
+                " to wind server on topic " << wind_server_link_wind_topic_ << std::endl;
+        wind_server_register_pub_->Publish(register_msg);
     }
 
     GZ_REGISTER_MODEL_PLUGIN(GazeboWind3DMotorModel);

@@ -143,7 +143,7 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
     <origin xyz="-${arm_length_back_x} -${arm_length_back_y} ${rotor_offset_top}" rpy="0 0 0" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
-  
+    <!--
     <gazebo>      
       <link name='/vis_body'>
         <inertial>
@@ -166,7 +166,13 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
           </geometry>
         </collision>
         <visual name='visual'>
-          <plugin name="sphere_wind3d_visual" filename="libgazebo_wind3d_visual_plugin.so"/>
+          <plugin name="sphere_wind3d_visual" filename="libgazebo_wind3d_visual_plugin.so">\
+            <robotNamespace></robotNamespace>            
+            <modelName>iris</modelName>
+            <linkName>/base_link</linkName>
+            <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
+            <windServerLinkTopic>/gazebo/default/iris/base_link/visual</windServerLinkTopic>
+          </plugin>
           <geometry>
             <sphere>
               <radius>0.001</radius>
@@ -193,7 +199,7 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
       </axis>
     </joint> 
   </gazebo>
-
+  -->
   <gazebo>      
       <link name='/imu_link'>
       <pose>0 0 0.02 0 0 0</pose>
@@ -238,7 +244,7 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
       <parent>/base_link</parent>
     </joint>
     <plugin name='groundtruth_plugin' filename='libgazebo_groundtruth_plugin.so'>
-      <robotNamespace/>
+      <robotNamespace></robotNamespace>          
     </plugin> 
     <plugin name='anemometer_plugin' filename='libgazebo_anemometer_plugin.so'>
       <robotNamespace></robotNamespace>
@@ -253,16 +259,19 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
       <windServerLinkTopic>/gazebo/default/anemometer_wind</windServerLinkTopic>
     </plugin>
+    
+    
     <plugin name='gazebo_dynamic_wind_plugin' filename='libgazebo_dynamic_wind_plugin.so'>
       <robotNamespace></robotNamespace>
       <frameId>world</frameId>
       <linkName>/base_link</linkName>
       <publishRate>5</publishRate>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
-      <windServerLinkTopic>/gazebo/default/dynamics_wind</windServerLinkTopic>
+      <windServerLinkTopic>/gazebo/default/iris/base_link/wind</windServerLinkTopic>
     </plugin>  
+    
     <plugin name='magnetometer_plugin' filename='libgazebo_magnetometer_plugin.so'>
-      <robotNamespace/>
+      <robotNamespace></robotNamespace>
       <pubRate>100</pubRate>
       <noiseDensity>0.0004</noiseDensity>
       <randomWalk>6.4e-06</randomWalk>
@@ -270,13 +279,13 @@ px4_gazebo_wind3d/xacro$ gz sdf -p iris.urdf > iris.sdf
       <magTopic>/mag</magTopic>
     </plugin>
     <plugin name='barometer_plugin' filename='libgazebo_barometer_plugin.so'>
-      <robotNamespace/>
+      <robotNamespace></robotNamespace>
       <pubRate>50</pubRate>
       <baroTopic>/baro</baroTopic>
       <baroDriftPaPerSec>0</baroDriftPaPerSec>
     </plugin>
     <plugin name='mavlink_interface' filename='libgazebo_mavlink_interface.so'>
-      <robotNamespace/>
+      <robotNamespace></robotNamespace>
       <imuSubTopic>/imu</imuSubTopic>
       <magSubTopic>/mag</magSubTopic>
       <baroSubTopic>/baro</baroSubTopic>

@@ -71,6 +71,12 @@ namespace gazebo {
     typedef const boost::shared_ptr<const wind3d_msgs::msgs::WindServerRegistration>& WindServerRegistrationPtr;
     typedef const boost::shared_ptr<const physics_msgs::msgs::Wind>& GzWindSpeedMsgPtr;
 
+    enum WindFieldType {
+        NONE = 0,
+        XYZ_STATISTICAL     = 1,
+        XYZ_CONSTANT        = 2,
+        XYZT_FS             = 3
+    };
     /// \brief This gazebo plugin simulates wind acting on a model.
 
     class GazeboWind3DWorldPlugin : public WorldPlugin {
@@ -219,9 +225,9 @@ namespace gazebo {
         SampledVectorField<num_t, 3> pt_cloud_vec3;
         
         using fftfunc_kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
-                nanoflann::L2_Simple_Adaptor<num_t, SampledFourierRealFunctionField<num_t, 3, 10>>,
-                SampledFourierRealFunctionField<num_t, 3, 10>, 3 /* dim */>;
-        SampledFourierRealFunctionField<num_t, 3, 10> pt_cloud_fftfunc;
+                nanoflann::L2_Simple_Adaptor<num_t, SampledFourierRealFunctionField<num_t, 3>>,
+                SampledFourierRealFunctionField<num_t, 3>, 3 /* dim */>;
+        SampledFourierRealFunctionField<num_t, 3> pt_cloud_fftfunc;
         
         
         static_kd_tree_t *windfield_kdtree;

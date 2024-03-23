@@ -41,13 +41,15 @@ namespace gazebo {
         // Constants
         static const bool kPrintOnPluginLoad = true;
         static const bool kPrintOnUpdates = false;
+        static const bool kPrintOnMsgCallback = true;
         static const std::string kDefaultNamespace = "";
         static const std::string kDefaultWindServerRegisterTopic = "/gazebo/default/wind3d_register_link";
+        static const std::string kDefaultWindServerLinkTopic = "/gazebo/default/wind3d_visual";
         static const std::string kDefaultWindSpeedTopic = mav_msgs::default_topics::WIND_SPEED;
         static const std::string kConnectGazeboToRosSubtopic = "connect_gazebo_to_ros_subtopic";
         static const std::string kConnectRosToGazeboSubtopic = "connect_ros_to_gazebo_subtopic";
 
-        typedef const boost::shared_ptr<const physics_msgs::msgs::Wind>& GzWindSpeedMsgPtr;
+        typedef const boost::shared_ptr<const physics_msgs::msgs::Wind>& WindPtr;
 
         class GazeboWind3DVisualPlugin : public VisualPlugin {
         public:
@@ -56,8 +58,8 @@ namespace gazebo {
             GazeboWind3DVisualPlugin()
             : VisualPlugin(),
             namespace_(kDefaultNamespace),
-//            wind_server_reglink_topic_(kDefaultWindServerRegisterTopic),
-//            wind_server_link_wind_topic_(kDefaultNamespace + "/" + kDefaultLinkName + "/" + kDefaultWindSpeedTopic),
+            wind_server_reglink_topic_(kDefaultWindServerRegisterTopic),
+            wind_server_link_wind_topic_(kDefaultWindServerLinkTopic),
             node_handle_(nullptr),
             pubs_and_subs_created_(false) {
             }
@@ -84,7 +86,7 @@ namespace gazebo {
             ///           has loaded and listening to ConnectGazeboToRosTopic and ConnectRosToGazeboTopic messages).
             void CreatePubsAndSubs();
 
-            void WindSpeedCallback(GzWindSpeedMsgPtr& wind_speed_msg);
+            void WindVelocity(WindPtr& wind_speed_msg);
 
             /// \brief    Handle for the Gazebo node.
             gazebo::transport::NodePtr node_handle_;
@@ -97,6 +99,8 @@ namespace gazebo {
             gazebo::transport::PublisherPtr wind_server_register_pub_;
             gazebo::transport::SubscriberPtr wind_server_link_wind_msg_sub_;
 
+            std::string link_name_;
+            std::string model_name_;
             /// \brief    Transport namespace.
             std::string namespace_;
 
@@ -106,17 +110,13 @@ namespace gazebo {
             /// \brief The scene pointer.
             ScenePtr scene_;
 
-            gazebo::rendering::ArrowVisualPtr arrow_ptr;
-
+            gazebo::rendering::ArrowVisualPtr arrow_ptr_;
+            ignition::math::Vector3d wind_velocity_;
             /// \brief    Pointer to the world.
             physics::WorldPtr world_;
 
-            /// \brief    Pointer to the model.
-            physics::ModelPtr model_;
-
             /// \brief    Pointer to the update event connection.
             event::ConnectionPtr updateConnection_;
-
         };
     }
 }

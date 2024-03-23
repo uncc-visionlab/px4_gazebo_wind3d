@@ -25,18 +25,15 @@
 #include <fstream>
 #include <math.h>
 
-#include "ConnectGazeboToRosTopic.pb.h"
-#include "WindServerRegistration.pb.h"
-
 namespace gazebo {
 
     GazeboDynamicWindPlugin::~GazeboDynamicWindPlugin() {
     }
 
     void GazeboDynamicWindPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
-        //  if (kPrintOnPluginLoad) {
-        //    gzdbg << __FUNCTION__ << "() called." << std::endl;
-        //  }
+        if (kPrintOnPluginLoad) {
+            gzdbg << __FUNCTION__ << "() called." << std::endl;
+        }
 
         // Store the pointer to the model.
         model_ = _model;
@@ -59,11 +56,6 @@ namespace gazebo {
 
         // Initialize with default namespace (typically /gazebo/default/).
         node_handle_->Init(namespace_);
-
-        //        if (_sdf->HasElement("xyzOffset"))
-        //            xyz_offset_ = _sdf->GetElement("xyzOffset")->Get<ignition::math::Vector3d >();
-        //        else
-        //            gzerr << "[gazebo_dynamic_wind_plugin] Please specify a xyzOffset.\n";
 
         getSdfParam<std::string>(_sdf, "windServerRegisterLinkTopic", wind_server_reglink_topic_,
                 wind_server_reglink_topic_);
@@ -140,11 +132,13 @@ namespace gazebo {
         //wind_force_pub_->Publish(wrench_stamped_msg_);        
     }
 
-    void GazeboDynamicWindPlugin::WindSpeedCallback(GzWindSpeedMsgPtr & wind_speed_msg) {
-        //if (kPrintOnMsgCallback) {
-        //  gzdbg << __FUNCTION__ << "() called." << std::endl;
-        //}
-        //gzdbg << __FUNCTION__ << "() called." << std::endl;
+    void GazeboDynamicWindPlugin::WindVelocityCallback(WindPtr & wind_speed_msg) {
+        if (kPrintOnMsgCallback) {
+            gzdbg << __FUNCTION__ << "() received speed (x,y,z)=(" <<
+                    wind_speed_msg->velocity().x() << ", " <<
+                    wind_speed_msg->velocity().y() << ", " <<
+                    wind_speed_msg->velocity().z() << ")" << std::endl;
+        }
 
         // TODO(burrimi): Transform velocity to world frame if frame_id is set to
         // something else.
@@ -154,16 +148,10 @@ namespace gazebo {
     }
 
     void GazeboDynamicWindPlugin::CreatePubsAndSubs() {
-        // Create temporary "ConnectGazeboToRosTopic" publisher and message.
-        gazebo::transport::PublisherPtr connect_gazebo_to_ros_topic_pub =
-                node_handle_->Advertise<gz_std_msgs::ConnectGazeboToRosTopic>(
-                "~/" + kConnectGazeboToRosSubtopic, 1);
-
-        gz_std_msgs::ConnectGazeboToRosTopic connect_gazebo_to_ros_topic_msg;
         wind_server_register_pub_ = node_handle_->Advertise<wind3d_msgs::msgs::WindServerRegistration>(
                 wind_server_reglink_topic_, 1);
         wind_server_link_wind_msg_sub_ = node_handle_->Subscribe<physics_msgs::msgs::Wind>(wind_server_link_wind_topic_,
-                &GazeboDynamicWindPlugin::WindSpeedCallback, this);
+                &GazeboDynamicWindPlugin::WindVelocityCallback, this);
 
         // Register this plugin with the world dynamic wind server
         wind3d_msgs::msgs::WindServerRegistration register_msg;
@@ -172,37 +160,6 @@ namespace gazebo {
         register_msg.set_namespace_(namespace_);
         register_msg.set_link_wind_topic(wind_server_link_wind_topic_);
         wind_server_register_pub_->Publish(register_msg);
-
-        // ============================================ //
-        // ========= WRENCH STAMPED MSG SETUP ========= //
-        // ============================================ //
-        //wind_force_pub_ = node_handle_->Advertise<gz_geometry_msgs::WrenchStamped>(
-        //        "~/" + namespace_ + "/" + wind_force_pub_topic_, 1);
-
-        // connect_gazebo_to_ros_topic_msg.set_gazebo_namespace(namespace_);
-        //connect_gazebo_to_ros_topic_msg.set_gazebo_topic("~/" + namespace_ + "/" +
-        //        wind_force_pub_topic_);
-        //connect_gazebo_to_ros_topic_msg.set_ros_topic(namespace_ + "/" +
-        //        wind_force_pub_topic_);
-        //connect_gazebo_to_ros_topic_msg.set_msgtype(
-        //        gz_std_msgs::ConnectGazeboToRosTopic::WRENCH_STAMPED);
-        //connect_gazebo_to_ros_topic_pub->Publish(connect_gazebo_to_ros_topic_msg,
-        //        true);
-        //
-        // ============================================ //
-        // ========== WIND SPEED MSG SETUP ============ //
-        // ============================================ //
-        //  wind_speed_pub_ = node_handle_->Advertise<gz_mav_msgs::WindSpeed>(
-        //      "~/" + namespace_ + "/" + wind_speed_pub_topic_, 1);
-        //
-        //  connect_gazebo_to_ros_topic_msg.set_gazebo_topic("~/" + namespace_ + "/" +
-        //                                                   wind_speed_pub_topic_);
-        //  connect_gazebo_to_ros_topic_msg.set_ros_topic(namespace_ + "/" +
-        //                                                wind_speed_pub_topic_);
-        //  connect_gazebo_to_ros_topic_msg.set_msgtype(
-        //      gz_std_msgs::ConnectGazeboToRosTopic::WIND_SPEED);
-        //  connect_gazebo_to_ros_topic_pub->Publish(connect_gazebo_to_ros_topic_msg,
-        //                                           true);
     }
 
     GZ_REGISTER_MODEL_PLUGIN(GazeboDynamicWindPlugin);

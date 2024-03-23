@@ -39,13 +39,17 @@
 
 #include <mav_msgs/default_topics.h>  // This comes from the mav_comm repo
 
+#include "ConnectGazeboToRosTopic.pb.h"
 #include "Wind.pb.h"                  // Wind message
+#include "WindServerRegistration.pb.h"
 
 #include "common.h"
 
 namespace gazebo {
     // Default values
     static const bool kPrintOnUpdates = false;
+    static const bool kPrintOnPluginLoad = false;
+    static const bool kPrintOnMsgCallback = false;
     static const std::string kDefaultWindTopic = "world_wind";
     static const std::string kDefaultWindServerRegisterTopic = "/gazebo/default/wind3d_register_link";
     static const std::string kDefaultWindSpeedTopic = mav_msgs::default_topics::WIND_SPEED;
@@ -74,7 +78,7 @@ namespace gazebo {
     /// \brief    This gazebo plugin simulates wind acting on a model.
     /// \details  This plugin publishes on a Gazebo topic and instructs the ROS interface plugin to
     ///           forward the message onto ROS.
-    typedef const boost::shared_ptr<const physics_msgs::msgs::Wind>& GzWindSpeedMsgPtr;
+    typedef const boost::shared_ptr<const physics_msgs::msgs::Wind>& WindPtr;
 
     class GazeboDynamicWindPlugin : public ModelPlugin {
     public:
@@ -121,7 +125,7 @@ namespace gazebo {
         ///           has loaded and listening to ConnectGazeboToRosTopic and ConnectRosToGazeboTopic messages).
         void CreatePubsAndSubs();
 
-        void WindSpeedCallback(GzWindSpeedMsgPtr& wind_speed_msg);
+        void WindVelocityCallback(WindPtr& wind_speed_msg);
         /// \brief    Pointer to the update event connection.
         event::ConnectionPtr update_connection_;
 
@@ -137,14 +141,11 @@ namespace gazebo {
         
         std::string wind_server_reglink_topic_;
         std::string wind_server_link_wind_topic_;
+        gazebo::transport::PublisherPtr wind_server_register_pub_;
+        gazebo::transport::SubscriberPtr wind_server_link_wind_msg_sub_;
 
         double wind_force_mean_;
         double wind_force_variance_;
-
-//        ignition::math::Vector3d xyz_offset_;
-
-        gazebo::transport::PublisherPtr wind_server_register_pub_;
-        gazebo::transport::SubscriberPtr wind_server_link_wind_msg_sub_;
 
         gazebo::transport::NodePtr node_handle_;
 

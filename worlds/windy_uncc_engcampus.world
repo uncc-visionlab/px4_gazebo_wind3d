@@ -26,26 +26,20 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
     </include>
     <!--
     <plugin name='wind3d_plugin' filename='libgazebo_wind3d_world_plugin.so'>
-      <frameId>base_link</frameId>
-      <linkName>base_link</linkName>
       <publishRate>2.0</publishRate>
-      <robotNamespace/>
       <useCustomStaticWindField>true</useCustomStaticWindField>
       <customStaticWindFieldPath>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/openfoam_dataset_0.csv</customStaticWindFieldPath>
-      <windPubTopic>world_wind</windPubTopic>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
+      <windPubTopic>world_wind</windPubTopic>
     </plugin>
     -->
     <!-- -->
     <plugin name='wind3d_plugin' filename='libgazebo_wind3d_world_plugin.so'>
-      <frameId>base_link</frameId>
-      <linkName>base_link</linkName>
-      <publishRate>2.0</publishRate>
-      <robotNamespace/>
+      <publishRate>1.0</publishRate>
       <useCustomDynamicWindField>true</useCustomDynamicWindField>
       <customDynamicWindFieldPath>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/all_FFT_data.csv</customDynamicWindFieldPath>
-      <windPubTopic>world_wind</windPubTopic>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
+      <windPubTopic>world_wind</windPubTopic>
     </plugin>
     <!-- -->
    <plugin name="ros_interface_plugin" filename="libgazebo_ros_interface_plugin.so">
@@ -74,7 +68,7 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
       <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
     </physics>
     <model name='unit_sphere'>
-      <pose>1.013103 1.035528 1 0 -0 0</pose>
+      <pose>1.0 1.0 1 0 -0 0</pose>
       <link name='/sphere/base_link2'>
         <inertial>
           <mass>0.1</mass>
@@ -138,7 +132,7 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
         <robotNamespace></robotNamespace>
         <frameId>world</frameId>
         <linkName>/sphere/base_link2</linkName>
-        <publishRate>5</publishRate>
+        <publishRate>1</publishRate>
         <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
         <windServerLinkTopic>/gazebo/default/sphere_wind</windServerLinkTopic>
       </plugin>

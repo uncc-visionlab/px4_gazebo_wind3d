@@ -142,6 +142,8 @@
         <rollingMomentCoefficient>${rolling_moment_coefficient}</rollingMomentCoefficient>
         <motorSpeedPubTopic>motor_speed/${motor_number}</motorSpeedPubTopic>
         <rotorVelocitySlowdownSim>${rotor_velocity_slowdown_sim}</rotorVelocitySlowdownSim>
+        <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
+        <windServerLinkTopic>/gazebo/default/${robot_namespace}/rotor_${motor_number}/wind</windServerLinkTopic>
       </plugin>
     </gazebo>
     <gazebo reference="${robot_namespace}/rotor_${motor_number}">

@@ -84,7 +84,7 @@ namespace gazebo {
 
             ReadCustomDynamicWindField(custom_dyn_wind_field_path);
         } else {
-            gzdbg << "[gazebo_wind3d_world_plugin] Using user-defined constant wind field and gusts.\n";
+            gzdbg << "[gazebo_wind3d_world_plugin] Using statistically generated wind field and wind gust values.\n";
 
             // Get the wind params from SDF.
             getSdfParam<double>(sdf, "windVelocityMean", wind_velocity_mean_, wind_velocity_mean_);
@@ -256,7 +256,7 @@ namespace gazebo {
             wind_msg.set_time_usec(now.Double() * 1e6);
             wind_msg.set_allocated_velocity(wind_v_ptr);
             wind_pub_->Publish(wind_msg);
-        } else {
+        } else if (use_custom_static_wind_field_) {
             if (registered_link_list_.size() == 0) {
                 return;
             }
@@ -303,7 +303,6 @@ namespace gazebo {
                             pt_cloud_vec3._data[pt_idx][1] * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
                     wind_direction.Z() +=
                             pt_cloud_vec3._data[pt_idx][2] * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
-                    pt_cloud_vec3._data[pt_idx][0];
                 }
 
                 double wind_strength = wind_direction.Length();
@@ -319,7 +318,86 @@ namespace gazebo {
                 wind_msg.set_frame_id(frame_id_);
                 wind_msg.set_time_usec(now.Double() * 1e6);
                 wind_msg.set_allocated_velocity(wind_v_ptr);
-                //wind_pub_->Publish(wind_msg);
+                registered_link_wind_publisher_list_[index++]->Publish(wind_msg);
+            }
+        } else if (use_custom_dynamic_wind_field_) {
+            if (registered_link_list_.size() == 0) {
+                return;
+            }
+            int index = 0;
+            for (physics::LinkPtr link : registered_link_list_) {
+                ignition::math::Vector3d link_position = link->WorldPose().Pos();
+                const num_t query_pt[3] = {(float) link_position.X(), (float) link_position.Y(), (float) link_position.Z()};
+                // ----------------------------------------------------------------
+                // knnSearch():  Perform a search for the N closest points
+                // ----------------------------------------------------------------
+                size_t num_results = 2;
+                std::vector<uint32_t> ret_index(num_results);
+                std::vector<num_t> out_dist_sqr(num_results);
+
+                num_results = windfield_fft_kdtree->knnSearch(&query_pt[0], num_results, &ret_index[0],
+                        &out_dist_sqr[0]);
+
+                // In case of less points in the tree than requested:
+                ret_index.resize(num_results);
+                out_dist_sqr.resize(num_results);
+
+                //std::cout << "knnSearch(): num_results=" << num_results << std::endl;
+                int pt_idx = 0;
+                ignition::math::Vector3d wind_direction(0, 0, 0);
+                ignition::math::Vector3d wind_vel(0, 0, 0);
+                float total_invdistance_sqr = 0;
+                for (size_t i = 0; i < num_results; i++) {
+                    total_invdistance_sqr += 1.0f / out_dist_sqr[i];
+                }
+#if GAZEBO_MAJOR_VERSION >= 9
+                common::Time time_ = world_->SimTime();
+#else
+                common::Time time_ = world_->GetSimTime();
+#endif                
+                float t = time_.Float();
+                for (size_t i = 0; i < num_results; i++) {
+                    std::cout << "idx[" << i << "]=" << ret_index[i] <<
+                            " (X,Y,Z) = (" << pt_cloud_fftfunc.pts[ret_index[i]].x << ", " <<
+                            pt_cloud_fftfunc.pts[ret_index[i]].y << ", " <<
+                            pt_cloud_fftfunc.pts[ret_index[i]].z << ") " << " dist[" << i
+                            << "]=" << out_dist_sqr[i] << std::endl;
+                    pt_idx = ret_index[i];
+
+                    int num_coeffs = pt_cloud_fftfunc._freq[pt_idx].size();
+                    const auto &f = pt_cloud_fftfunc._freq[pt_idx].data();
+                    const auto &a_k = pt_cloud_fftfunc._real[pt_idx].data();
+                    const auto &b_k = pt_cloud_fftfunc._imag[pt_idx].data();
+                    for (int k = 0; k < num_coeffs; k++) {
+                        wind_vel.X() += 2 * (a_k[k][0] * std::cos(2.0f * M_PI * f[k][0] * t) +
+                                b_k[k][0] * std::sin(2.0f * M_PI * f[k][0] * t));
+                        wind_vel.Y() += 2 * (a_k[k][1] * std::cos(2.0f * M_PI * f[k][1] * t) +
+                                b_k[k][1] * std::sin(2.0f * M_PI * f[k][1] * t));
+                        wind_vel.Z() += 2 * (a_k[k][2] * std::cos(2.0f * M_PI * f[k][2] * t) +
+                                b_k[k][2] * std::sin(2.0f * M_PI * f[k][2] * t));
+                    }
+                    wind_direction.X() +=
+                            wind_vel.X() * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
+                    wind_direction.Y() +=
+                            wind_vel.Y() * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
+                    wind_direction.Z() +=
+                            wind_vel.Z() * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
+
+                }
+
+                double wind_strength = wind_direction.Length();
+                if (wind_strength > wind_velocity_max_) {
+                    wind_direction *= wind_velocity_max_ / wind_strength;
+                }
+                // Get normal distribution wind direction
+                ignition::math::Vector3d wind = wind_direction;
+                gazebo::msgs::Vector3d* wind_v_ptr = new gazebo::msgs::Vector3d();
+                wind_v_ptr->set_x(wind.X());
+                wind_v_ptr->set_y(wind.Y());
+                wind_v_ptr->set_z(wind.Z());
+                wind_msg.set_frame_id(frame_id_);
+                wind_msg.set_time_usec(now.Double() * 1e6);
+                wind_msg.set_allocated_velocity(wind_v_ptr);
                 registered_link_wind_publisher_list_[index++]->Publish(wind_msg);
             }
         }
@@ -329,44 +407,6 @@ namespace gazebo {
         wind_pub_ = node_handle_->Advertise<physics_msgs::msgs::Wind>("~/" + wind_pub_topic_, 10);
         wind_register_sub_ = node_handle_->Subscribe<wind3d_msgs::msgs::WindServerRegistration>(wind_server_reglink_topic_,
                 &GazeboWind3DWorldPlugin::RegisterLinkCallback, this);
-        // Create temporary "ConnectGazeboToRosTopic" publisher and message.
-        //        gazebo::transport::PublisherPtr connect_gazebo_to_ros_topic_pub =
-        //                node_handle_->Advertise<gz_std_msgs::ConnectGazeboToRosTopic>(
-        //                        "~/" + kConnectGazeboToRosSubtopic, 1);
-        //
-        //        gz_std_msgs::ConnectGazeboToRosTopic connect_gazebo_to_ros_topic_msg;
-
-        // ============================================ //
-        // ========= WRENCH STAMPED MSG SETUP ========= //
-        // ============================================ //
-        //        wind_force_pub_ = node_handle_->Advertise<gz_geometry_msgs::WrenchStamped>(
-        //                "~/" + namespace_ + "/" + wind_force_pub_topic_, 1);
-        //        wind_pub_ = node_handle_->Advertise<physics_msgs::msgs::Wind>("~/" + wind_pub_topic_, 10);
-
-        // connect_gazebo_to_ros_topic_msg.set_gazebo_namespace(namespace_);
-        //        connect_gazebo_to_ros_topic_msg.set_gazebo_topic("~/" + namespace_ + "/" +
-        //                                                         wind_force_pub_topic_);
-        //        connect_gazebo_to_ros_topic_msg.set_ros_topic(namespace_ + "/" +
-        //                                                      wind_force_pub_topic_);
-        //        connect_gazebo_to_ros_topic_msg.set_msgtype(
-        //                gz_std_msgs::ConnectGazeboToRosTopic::WRENCH_STAMPED);
-        //        connect_gazebo_to_ros_topic_pub->Publish(connect_gazebo_to_ros_topic_msg,
-        //                                                 true);
-
-        // ============================================ //
-        // ========== WIND SPEED MSG SETUP ============ //
-        // ============================================ //
-        //        wind_speed_pub_ = node_handle_->Advertise<gz_mav_msgs::WindSpeed>(
-        //                "~/" + namespace_ + "/" + wind_speed_pub_topic_, 1);
-        //
-        //        connect_gazebo_to_ros_topic_msg.set_gazebo_topic("~/" + namespace_ + "/" +
-        //                                                         wind_speed_pub_topic_);
-        //        connect_gazebo_to_ros_topic_msg.set_ros_topic(namespace_ + "/" +
-        //                                                      wind_speed_pub_topic_);
-        //        connect_gazebo_to_ros_topic_msg.set_msgtype(
-        //                gz_std_msgs::ConnectGazeboToRosTopic::WIND_SPEED);
-        //        connect_gazebo_to_ros_topic_pub->Publish(connect_gazebo_to_ros_topic_msg,
-        //                                                 true);
     }
 
     void GazeboWind3DWorldPlugin::ReadCustomStaticWindField(std::string & custom_wind_field_xyz_uvw_path) {
@@ -450,7 +490,7 @@ namespace gazebo {
         //                                  << "]=" << ret_matches[i].second << std::endl;
         //                    std::cout << std::endl;
         //                }
-        gzdbg << "[gazebo_wind3d_world_plugin] Successfully read custom spatially varying wind field from text file.\n";
+        gzdbg << "[gazebo_wind3d_world_plugin] Successfully read custom (X,Y,Z,time) varying wind field from text file.\n";
     }
 
     void GazeboWind3DWorldPlugin::ReadCustomDynamicWindField(std::string & wind_field_datafile_path) {
@@ -468,10 +508,13 @@ namespace gazebo {
         gzdbg << __FUNCTION__ << " First row has " << first_row.size() << " elements." << std::endl;
         gzdbg << __FUNCTION__ << " " << num_coeffs << " FFT coefficients for each (x,y,z) location." << std::endl;
         pt_cloud_fftfunc.pts.resize(num_points);
-        for (int dimension = 0; dimension < 3; dimension++) {
-            pt_cloud_fftfunc._freq.resize(num_coeffs);
-            pt_cloud_fftfunc._real.resize(num_coeffs);
-            pt_cloud_fftfunc._imag.resize(num_coeffs);
+        pt_cloud_fftfunc._freq.resize(num_points);
+        pt_cloud_fftfunc._real.resize(num_points);
+        pt_cloud_fftfunc._imag.resize(num_points);
+        for (int pt_index = 0; pt_index < num_points; pt_index++) {
+            pt_cloud_fftfunc._freq[pt_index].resize(num_coeffs);
+            pt_cloud_fftfunc._real[pt_index].resize(num_coeffs);
+            pt_cloud_fftfunc._imag[pt_index].resize(num_coeffs);
         }
         int pt_index = 0;
         float pt_avg[3]{0.f, 0.f, 0.f};
@@ -484,9 +527,9 @@ namespace gazebo {
                 pt_avg[j] += row[j] / num_points;
             for (int coeff_index = 0; coeff_index < num_coeffs; coeff_index++) {
                 for (int dimension = 0; dimension < 3; dimension++) {
-                    pt_cloud_fftfunc._freq[dimension][coeff_index] = row[coeff_index * 3 * 3 + dimension * 3 + 3];
-                    pt_cloud_fftfunc._real[dimension][coeff_index] = row[coeff_index * 3 * 3 + dimension * 3 + 3 + 1];
-                    pt_cloud_fftfunc._imag[dimension][coeff_index] = row[coeff_index * 3 * 3 + dimension * 3 + 3 + 2];
+                    pt_cloud_fftfunc._freq[pt_index][coeff_index][dimension] = row[coeff_index * 3 * 3 + dimension * 3 + 3];
+                    pt_cloud_fftfunc._real[pt_index][coeff_index][dimension] = row[coeff_index * 3 * 3 + dimension * 3 + 3 + 1];
+                    pt_cloud_fftfunc._imag[pt_index][coeff_index][dimension] = row[coeff_index * 3 * 3 + dimension * 3 + 3 + 2];
                 }
             }
             // Print the data
@@ -525,7 +568,7 @@ namespace gazebo {
                     << "]=" << out_dist_sqr[i] << std::endl;
         }
         // Create a vector to store the data
-        gzdbg << "[gazebo_wind3d_world_plugin] Successfully read custom spatially and temporally varying wind field from text file.\n";
+        gzdbg << "[gazebo_wind3d_world_plugin] Successfully read custom (X,Y,Z,time) varying wind field from text file.\n";
     }
 
     GZ_REGISTER_WORLD_PLUGIN(GazeboWind3DWorldPlugin);
