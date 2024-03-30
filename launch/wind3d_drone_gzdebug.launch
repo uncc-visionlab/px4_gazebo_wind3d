@@ -114,9 +114,12 @@
       <!--<remap from="joint_states" to="different_joint_states" />-->
     </node>
 
+    <arg name="mission_A" default="MC_mission_box.plan"/>
+    <arg name="mission_B" default="MC_mission_uncc.plan"/>
+    <arg name="mission_C" default="MC_safe_landing.plan"/>
     <!-- <node pkg="gazebo_px4_drone" name="mavros_autopilot" type="mavros_autopilot_01.py" output="screen"/> -->
     <node pkg="gazebo_px4_drone" name="mission_test" type="mission_test.py" output="screen" if="$(arg run_mission)">
-        <param name="mission_name"        value="MC_mission_box.plan"/>
+        <param name="mission_name"        value="$(arg mission_B)"/>
     </node>
 
     <!-- MAVROS -->
