@@ -53,6 +53,7 @@ namespace gazebo {
         // Check if a custom static wind field should be used.
         getSdfParam<bool>(sdf, "useCustomStaticWindField", use_custom_static_wind_field_, false);
         getSdfParam<bool>(sdf, "useCustomDynamicWindField", use_custom_dynamic_wind_field_, false);
+        getSdfParam<double>(sdf, "windVelocityMax", wind_velocity_max_, wind_velocity_max_);
 
         if (use_custom_static_wind_field_) {
             gzdbg << "[gazebo_wind3d_world_plugin] Using custom spatially varying wind field from text file.\n";
@@ -222,7 +223,7 @@ namespace gazebo {
 
         // Calculate the wind force.
         // Get normal distribution wind strength
-        if (!use_custom_static_wind_field_) {
+        if (!use_custom_static_wind_field_ && !use_custom_dynamic_wind_field_) {
             gazebo::msgs::Vector3d* wind_v_ptr = new gazebo::msgs::Vector3d();
             double wind_strength = std::abs(wind_velocity_distribution_(wind_velocity_generator_));
             wind_strength = (wind_strength > wind_velocity_max_) ? wind_velocity_max_ : wind_strength;
@@ -331,7 +332,7 @@ namespace gazebo {
                 // ----------------------------------------------------------------
                 // knnSearch():  Perform a search for the N closest points
                 // ----------------------------------------------------------------
-                size_t num_results = 2;
+                size_t num_results = 1;
                 std::vector<uint32_t> ret_index(num_results);
                 std::vector<num_t> out_dist_sqr(num_results);
 
@@ -345,7 +346,7 @@ namespace gazebo {
                 //std::cout << "knnSearch(): num_results=" << num_results << std::endl;
                 int pt_idx = 0;
                 ignition::math::Vector3d wind_direction(0, 0, 0);
-                ignition::math::Vector3d wind_vel(0, 0, 0);
+                ignition::math::Vector3d wind_vel;
                 float total_invdistance_sqr = 0;
                 for (size_t i = 0; i < num_results; i++) {
                     total_invdistance_sqr += 1.0f / out_dist_sqr[i];
@@ -357,31 +358,37 @@ namespace gazebo {
 #endif                
                 float t = time_.Float();
                 for (size_t i = 0; i < num_results; i++) {
-                    std::cout << "idx[" << i << "]=" << ret_index[i] <<
-                            " (X,Y,Z) = (" << pt_cloud_fftfunc.pts[ret_index[i]].x << ", " <<
-                            pt_cloud_fftfunc.pts[ret_index[i]].y << ", " <<
-                            pt_cloud_fftfunc.pts[ret_index[i]].z << ") " << " dist[" << i
-                            << "]=" << out_dist_sqr[i] << std::endl;
+                    wind_vel.X() = 0;
+                    wind_vel.Y() = 0;
+                    wind_vel.Z() = 0;
                     pt_idx = ret_index[i];
-
                     int num_coeffs = pt_cloud_fftfunc._freq[pt_idx].size();
                     const auto &f = pt_cloud_fftfunc._freq[pt_idx].data();
                     const auto &a_k = pt_cloud_fftfunc._real[pt_idx].data();
                     const auto &b_k = pt_cloud_fftfunc._imag[pt_idx].data();
                     for (int k = 0; k < num_coeffs; k++) {
-                        wind_vel.X() += 2 * (a_k[k][0] * std::cos(2.0f * M_PI * f[k][0] * t) +
+                        wind_vel.X() += 1 * (a_k[k][0] * std::cos(2.0f * M_PI * f[k][0] * t) +
                                 b_k[k][0] * std::sin(2.0f * M_PI * f[k][0] * t));
-                        wind_vel.Y() += 2 * (a_k[k][1] * std::cos(2.0f * M_PI * f[k][1] * t) +
+                        wind_vel.Y() += 1 * (a_k[k][1] * std::cos(2.0f * M_PI * f[k][1] * t) +
                                 b_k[k][1] * std::sin(2.0f * M_PI * f[k][1] * t));
-                        wind_vel.Z() += 2 * (a_k[k][2] * std::cos(2.0f * M_PI * f[k][2] * t) +
+                        wind_vel.Z() += 1 * (a_k[k][2] * std::cos(2.0f * M_PI * f[k][2] * t) +
                                 b_k[k][2] * std::sin(2.0f * M_PI * f[k][2] * t));
                     }
+//                    gzdbg << "idx[" << i << "]=" << ret_index[i] <<
+//                            " (X,Y,Z) = (" << pt_cloud_fftfunc.pts[ret_index[i]].x << ", " <<
+//                            pt_cloud_fftfunc.pts[ret_index[i]].y << ", " <<
+//                            pt_cloud_fftfunc.pts[ret_index[i]].z << ") " << " dist[" << i
+//                            << "]=" << out_dist_sqr[i] << " wind(X,Y,Z)=" <<
+//                            wind_vel.X() << ", " <<
+//                            wind_vel.Y() << ", " <<
+//                            wind_vel.Z() << ")" << std::endl;
+
                     wind_direction.X() +=
-                            wind_vel.X() * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
+                            (wind_vel.X()) * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
                     wind_direction.Y() +=
-                            wind_vel.Y() * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
+                            (wind_vel.Y()) * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
                     wind_direction.Z() +=
-                            wind_vel.Z() * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
+                            (wind_vel.Z()) * (1.0f / out_dist_sqr[i]) / total_invdistance_sqr;
 
                 }
 
@@ -390,11 +397,10 @@ namespace gazebo {
                     wind_direction *= wind_velocity_max_ / wind_strength;
                 }
                 // Get normal distribution wind direction
-                ignition::math::Vector3d wind = wind_direction;
                 gazebo::msgs::Vector3d* wind_v_ptr = new gazebo::msgs::Vector3d();
-                wind_v_ptr->set_x(wind.X());
-                wind_v_ptr->set_y(wind.Y());
-                wind_v_ptr->set_z(wind.Z());
+                wind_v_ptr->set_x(wind_direction.X());
+                wind_v_ptr->set_y(wind_direction.Y());
+                wind_v_ptr->set_z(wind_direction.Z());
                 wind_msg.set_frame_id(frame_id_);
                 wind_msg.set_time_usec(now.Double() * 1e6);
                 wind_msg.set_allocated_velocity(wind_v_ptr);
@@ -525,17 +531,34 @@ namespace gazebo {
             pt_cloud_fftfunc.pts[pt_index].z = row[2];
             for (int j = 0; j < 3; j++)
                 pt_avg[j] += row[j] / num_points;
-            for (int coeff_index = 0; coeff_index < num_coeffs; coeff_index++) {
-                for (int dimension = 0; dimension < 3; dimension++) {
-                    pt_cloud_fftfunc._freq[pt_index][coeff_index][dimension] = row[coeff_index * 3 * 3 + dimension * 3 + 3];
-                    pt_cloud_fftfunc._real[pt_index][coeff_index][dimension] = row[coeff_index * 3 * 3 + dimension * 3 + 3 + 1];
-                    pt_cloud_fftfunc._imag[pt_index][coeff_index][dimension] = row[coeff_index * 3 * 3 + dimension * 3 + 3 + 2];
+            int current_offset = 3;
+            for (int dimension = 0; dimension < 3; dimension++) {
+                for (int idx = 0; idx < 3; idx++) {
+                    for (int coeff_index = 0; coeff_index < num_coeffs; coeff_index++) {
+                        if (idx == 0) {
+                            pt_cloud_fftfunc._freq[pt_index][coeff_index][dimension] = row[current_offset++] * 100.0f;
+                        } else if (idx == 1) {
+                            pt_cloud_fftfunc._real[pt_index][coeff_index][dimension] = row[current_offset++] / 1000.0f;
+                        } else if (idx == 2) {
+                            pt_cloud_fftfunc._imag[pt_index][coeff_index][dimension] = row[current_offset++] / 1000.0f;
+                        }
+                    }
                 }
             }
             // Print the data
-            //std::cout << "(X,Y,Z), (U,V,W) = (" << pt_cloud_vec3.pts[i].x << ", " <<
-            //        pt_cloud_vec3.pts[i].y << ", " << pt_cloud_vec3.pts[i].z << "), " <<
-            //        "(" << pt_cloud_vec3._data[0][0] << ", " << pt_cloud_vec3._data[0][1] << ", " <<
+//            std::cout << "(X,Y,Z), (U,V,W) = (" << pt_cloud_fftfunc.pts[pt_index].x << ", " <<
+//                    pt_cloud_fftfunc.pts[pt_index].y << ", " << pt_cloud_fftfunc.pts[pt_index].z << ")" << std::endl;
+//            std::cout << "k[0-" << (num_coeffs - 1) << "]={";
+//            for (int dimension = 0; dimension < 3; dimension++) {
+//                for (int coeff_index = 0; coeff_index < num_coeffs; coeff_index++) {
+//                    std::cout << pt_cloud_fftfunc._freq[pt_index][coeff_index][dimension] << ", ";
+//                }
+//                std::cout << pt_cloud_fftfunc._real[pt_index][0][dimension] << ", ";
+//                std::cout << pt_cloud_fftfunc._imag[pt_index][0][dimension] << ", ";
+//                std::cout << std::endl;
+//            }
+            //        "f[0]=" << pt_cloud_fftfunc._freq[pt_index][0][0] <<
+            //        " k[0]" << pt_cloud_fftfunc._real[pt_index][0][0] << std::endl;
             //        pt_cloud_vec3._data[0][3] << ")" << std::endl;
             pt_index++;
         }

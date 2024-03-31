@@ -26,8 +26,10 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
     </include>
     <!--
     <plugin name='wind3d_plugin' filename='libgazebo_wind3d_world_plugin.so'>
+      <windVelocityMax>5.0</windVelocityMax>
       <publishRate>2.0</publishRate>
       <useCustomStaticWindField>true</useCustomStaticWindField>
+      <useCustomDynamicWindField>false</useCustomDynamicWindField>
       <customStaticWindFieldPath>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/openfoam_dataset_0.csv</customStaticWindFieldPath>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>
       <windPubTopic>world_wind</windPubTopic>
@@ -35,7 +37,9 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
     -->
     <!-- -->
     <plugin name='wind3d_plugin' filename='libgazebo_wind3d_world_plugin.so'>
+      <!--<windVelocityMax>5.0</windVelocityMax>-->
       <publishRate>1.0</publishRate>
+      <useCustomStaticWindField>false</useCustomStaticWindField>
       <useCustomDynamicWindField>true</useCustomDynamicWindField>
       <customDynamicWindFieldPath>/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/datasets/UNCC_EngCampus/all_FFT_data.csv</customDynamicWindFieldPath>
       <windServerRegisterLinkTopic>/gazebo/default/world_wind_register_link</windServerRegisterLinkTopic>

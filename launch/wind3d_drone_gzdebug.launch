@@ -20,6 +20,9 @@
         export GAZEBO_PLUGIN_PATH=/home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/lib:${GAZEBO_PLUGIN_PATH}
         export GAZEBO_MODEL_PATH=/home2/arwillis/uncc_wind_control/third_party/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models/:/home2/arwillis/uncc_wind_control/ros_image/ros_ws/src/px4_gazebo_wind3d/models:$GAZEBO_MODEL_PATH
         export LD_LIBRARY_PATH=/home2/arwillis/uncc_wind_control/ros_image/ros_ws/devel/lib:${LD_LIBRARY_PATH}
+        export PX4_HOME_LAT=35.3105038
+        export PX4_HOME_LON=-80.7401052
+        export PX4_HOME_ALT=0
     -->
 
     <!-- Posix SITL environment launch script -->
@@ -44,7 +47,10 @@
     <arg name="sdf" default="$(find mavlink_sitl_gazebo)/models/$(arg vehicle)/$(arg vehicle).sdf"/>
     -->
 
-    <env name="PX4_SIM_MODEL" value="gazebo-classic_$(arg vehicle)" />
+    <env name="PX4_SIM_MODEL"   value="gazebo-classic_$(arg vehicle)" />
+    <env name="PX4_HOME_LAT"    value="35.3105038" />
+    <env name="PX4_HOME_LON"    value="-80.7401052" />
+    <env name="ALT"             value="0" />
 
     <!-- gazebo configs -->
     <arg name="gui" default="true"/>
@@ -57,7 +63,7 @@
     <!-- PX4 SITL -->
     <arg unless="$(arg interactive)" name="px4_command_arg1" value="-d"/>
     <arg     if="$(arg interactive)" name="px4_command_arg1" value=""/>
-    <node name="sitl" pkg="px4" type="px4" output="screen"
+    <node name="px4_sitl" pkg="px4" type="px4" output="screen"
         args="$(find px4)/build/px4_sitl_default/etc -s etc/init.d-posix/rcS $(arg px4_command_arg1)" required="true"/>
     
     <arg name="existing_gazebo_plugin_path" default="$(optenv GAZEBO_PLUGIN_PATH)" />

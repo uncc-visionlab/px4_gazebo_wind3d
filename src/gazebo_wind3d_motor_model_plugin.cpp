@@ -308,7 +308,10 @@ namespace gazebo {
 
     void GazeboWind3DMotorModel::WindVelocityCallback(WindPtr & msg) {
         if (kPrintOnMsgCallback) {
-            gzdbg << __FUNCTION__ << "() motor " << motor_number_ << " wind speed (x,y,z)=(" <<
+            ignition::math::Vector3d position = link_->WorldPose().Pos();
+            gzdbg << __FUNCTION__ << "() motor " << motor_number_ << " pos (x,y,z)= (" <<
+                    position.X() << ", " << position.Y() << ", " << position.Z() << ") " <<
+                    "wind speed (x,y,z)=(" <<
                     msg->velocity().x() << ", " <<
                     msg->velocity().y() << ", " <<
                     msg->velocity().z() << ")" << std::endl;
