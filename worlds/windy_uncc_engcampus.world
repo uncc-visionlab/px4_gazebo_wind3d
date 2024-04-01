@@ -130,7 +130,6 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
         </wind>
         <kinematic>0</kinematic>
       </link>
-      -->
       <enable_wind>true</enable_wind>
       <static>false</static>
       <plugin name='gazebo_dynamic_wind_plugin' filename='libgazebo_dynamic_wind_plugin.so'>
@@ -142,5 +141,6 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
         <windServerLinkTopic>/gazebo/default/sphere_wind</windServerLinkTopic>
       </plugin>
     </model>
+    -->
   </world>
 </sdf>
