@@ -71,6 +71,7 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
       <real_time_update_rate>250</real_time_update_rate>
       <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
     </physics>
+    <!--
     <model name='unit_sphere'>
       <pose>1.0 1.0 1 0 -0 0</pose>
       <link name='/sphere/base_link2'>
@@ -107,7 +108,6 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
           </surface>
         </collision>
         <visual name='visual'>
-          <!-- <plugin name="sphere_wind3d_visual" filename="libgazebo_wind3d_visual_plugin.so"/> -->
           <geometry>
             <sphere>
               <radius>0.5</radius>
@@ -130,6 +130,7 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
         </wind>
         <kinematic>0</kinematic>
       </link>
+      -->
       <enable_wind>true</enable_wind>
       <static>false</static>
       <plugin name='gazebo_dynamic_wind_plugin' filename='libgazebo_dynamic_wind_plugin.so'>
