@@ -15,8 +15,7 @@
  */
 
 // MODULE HEADER
-#include <gazebo-11/gazebo/rendering/ArrowVisual.hh>
-//#include <c++/9/bits/shared_ptr.h>
+#include <gazebo/rendering/ArrowVisual.hh>
 
 #include "gazebo_wind3d_visual_plugin.h"
 
