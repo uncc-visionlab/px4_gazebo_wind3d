@@ -44,9 +44,6 @@ gz model --verbose --spawn-file="${modelpath}/${model}/${model_name}.sdf" --mode
       <windGustDirectionVariance>0</windGustDirectionVariance>
       <windPubTopic>world_wind</windPubTopic>
     </plugin>
-    <plugin name="ros_interface_plugin" filename="libgazebo_ros_interface_plugin.so">
-      <robotNamespace></robotNamespace>
-    </plugin> 
     <physics name='default_physics' default='0' type='ode'>
       <gravity>0 0 -9.8066</gravity>
       <!--<gravity>0 0 0</gravity>-->
